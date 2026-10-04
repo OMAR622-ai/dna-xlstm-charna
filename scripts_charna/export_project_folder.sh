@@ -23,7 +23,7 @@ git diff --name-only --diff-filter=AM "${BASE}" HEAD -- . ":(exclude)${OUT}" ":(
 
 # The project documentation (the repository's main README.md) as a copy in the folder.
 # Relative links are rewritten for the new location (charna_project/x -> x, other paths -> ../x).
-sed -e 's#](charna_project/#](#g' -e 's#](\([A-Za-z0-9_][A-Za-z0-9_.-]*[/.]\)#](../\1#g' \
+sed -e 's#](\([A-Za-z0-9_][A-Za-z0-9_.-]*[/.]\)#](../\1#g' -e 's#](\.\./charna_project/#](#g' -e 's#]()#](./)#g' \
   README.md > "${OUT}/PROJECT_README.md"
 
 # Exact edits to code files that already existed upstream (README files excluded: the main
