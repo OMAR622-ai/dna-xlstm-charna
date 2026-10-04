@@ -1,0 +1,3 @@
+smoke_charna exit=0 wall_s=930 peak_mem_mib=3388
+smoke_llama exit=0 wall_s=894 peak_mem_mib=1200
+SMOKE_DONE
