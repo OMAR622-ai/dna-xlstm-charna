@@ -250,10 +250,16 @@ and GBST seemed to flatten. But: this was a tiny run, GBST used the older versio
 change in section 7) and a learning rate of 1e-2 that we later replaced with 5e-4. It only
 showed the pipeline works.
 
-**Small experiment (running now).** 500 steps (0.5 billion bases), then 4 benchmark tasks.
-First result: after 100 steps (0.1 billion bases) the GBST + BERT validation loss is **1.340**
-(test 1.344). The remaining points, the comparison model and the benchmark results are expected
-by early Monday morning (5 October).
+**Small experiment (running now).** Both models are trained for 500 steps (0.5 billion bases);
+then `scripts_charna/evaluate_mlm.py` measures how often each model guesses the hidden base
+correctly (accuracy) on 2,048 sequences it never trained on. The benchmark tasks are skipped for
+now. First result: after 100 steps (0.1 billion bases) the GBST + BERT validation loss is
+**1.340** (test 1.344). The rest is expected tonight (4 October).
+
+Accuracy needs a reference point. Random guessing gives 25%, but always guessing the most common
+base (A or T, about 29% of the hidden positions) already gives about 29% without any model. A
+test of the evaluation script on the old 48-step smoke models showed exactly this trap: the smoke
+GBST model scored 29.1% by always answering "A"; the smoke Transformer++ scored 32.8%.
 
 **Benchmark pipeline test (works, numbers meaningless).** A 2-epoch fine-tuning on one task on
 the computer's main processor ran end to end for both models. The score (F1 0.679) is what you
