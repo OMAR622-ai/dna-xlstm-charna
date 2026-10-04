@@ -37,6 +37,22 @@ VAL_EVERY=${VAL_EVERY:-$(( MAX_STEPS / 10 ))}
 CKPT_EVERY=${CKPT_EVERY:-500}
 NUM_WORKERS=${NUM_WORKERS:-2}
 BATCH_SIZE=$(( 1048576 / SEQLEN ))  # constant number of tokens across context sizes
+
+# MODEL=charna (GBST + BERT) or MODEL=llama (the repo's Transformer++, same shape: Bio-xLSTM
+# Table A3) so both run with identical data, schedule and logging.
+MODEL=${MODEL:-charna}
+if [ "${MODEL}" = "charna" ]; then
+  MODEL_ARGS=(model=charna model.config.d_model=${D_MODEL} model.config.n_layer=${N_LAYER}
+    model.config.n_heads=${N_HEADS} model.config.hidden_dim=${HIDDEN_DIM} model.config.max_length=${SEQLEN}
+    model.config.tokenizer=${TOKENIZER} model.config.downsample_rate=${DOWNSAMPLE})
+elif [ "${MODEL}" = "llama" ]; then
+  TOKENIZER="embedding"
+  MODEL_ARGS=(model=llama model.config.d_model=${D_MODEL} model.config.n_layer=${N_LAYER}
+    model.config.n_heads=${N_HEADS} model.config.n_kv_heads=${N_HEADS} model.config.hidden_dim=${HIDDEN_DIM}
+    model.config.max_length=${SEQLEN} model.config.bidirectional=true model.config.dropout=0.0)
+else
+  echo "unknown MODEL=${MODEL}"; exit 1
+fi
 # Lightning 1.8 counts val_check_interval in micro-batches, not optimizer steps; the repo's own
 # scripts use no gradient accumulation, so scale by it to validate every VAL_EVERY optimizer steps.
 ACCUM=$(( BATCH_SIZE / (NUM_DEVICES * MICRO_BATCH) ))
@@ -44,27 +60,22 @@ VAL_CHECK_BATCHES=$(( VAL_EVERY * ACCUM ))
 
 SEQLEN_DIS="$(echo "scale=0; ${SEQLEN} / 1000" | bc)k"
 TIMESTAMP=$(date +"%y%m%d%H%M%S")
-WANDB_NAME=${RUN_NAME:-"charna_${TOKENIZER}-ds${DOWNSAMPLE}_${MLM_STRATEGY}_rcaug-${RC_AUG}_seqlen-${SEQLEN_DIS}_dmodel-${D_MODEL}_nlayer-${N_LAYER}_lr-${LR}_runid-${TIMESTAMP}"}
+WANDB_NAME=${RUN_NAME:-"${MODEL}_${TOKENIZER}-ds${DOWNSAMPLE}_${MLM_STRATEGY}_rcaug-${RC_AUG}_seqlen-${SEQLEN_DIS}_dmodel-${D_MODEL}_nlayer-${N_LAYER}_lr-${LR}_runid-${TIMESTAMP}"}
 HYDRA_RUN_DIR="./outputs/pretrain/hg38/${WANDB_NAME}"
 mkdir -p "${HYDRA_RUN_DIR}"
 
 python scripts_charna/train_charna.py \
   experiment=hg38/hg38 \
   callbacks.model_checkpoint_every_n_steps.every_n_train_steps=${CKPT_EVERY} \
+  +callbacks.metrics_csv.filename=metrics.csv \
+  +callbacks.metrics_csv.tokens_per_step=$(( BATCH_SIZE * SEQLEN )) \
   dataset.max_length=${SEQLEN} \
   dataset.batch_size=${MICRO_BATCH} \
   dataset.mlm=true \
   dataset.mlm_probability=0.15 \
   +dataset.mlm_strategy=${MLM_STRATEGY} \
   dataset.rc_aug="${RC_AUG}" \
-  model=charna \
-  model.config.d_model=${D_MODEL} \
-  model.config.n_layer=${N_LAYER} \
-  model.config.n_heads=${N_HEADS} \
-  model.config.hidden_dim=${HIDDEN_DIM} \
-  model.config.max_length=${SEQLEN} \
-  model.config.tokenizer=${TOKENIZER} \
-  model.config.downsample_rate=${DOWNSAMPLE} \
+  "${MODEL_ARGS[@]}" \
   optimizer.lr="${LR}" \
   optimizer.weight_decay=0.1 \
   train.global_batch_size=${BATCH_SIZE} \
