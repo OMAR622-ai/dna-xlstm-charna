@@ -49,7 +49,7 @@ class HG38(SequenceDataset):
                  num_workers=1,
                  fault_tolerant=False, ddp=False,
                  fast_forward_epochs=None, fast_forward_batches=None,
-                 mlm=False, mlm_probability=0.15,
+                 mlm=False, mlm_probability=0.15, mlm_strategy="mlm",
                  *args, **kwargs):
         self.dataset_config_name = dataset_config_name
         self.tokenizer_name = tokenizer_name
@@ -89,6 +89,7 @@ class HG38(SequenceDataset):
 
         self.mlm = mlm
         self.mlm_probability = mlm_probability
+        self.mlm_strategy = mlm_strategy  # train split only; val/test always use standard MLM
 
         # To be instantiated in `setup`
         self.tokenizer = None
@@ -137,7 +138,8 @@ class HG38(SequenceDataset):
                         rc_aug=self.rc_aug,
                         return_augs=False,
                         mlm=self.mlm,
-                        mlm_probability=self.mlm_probability, )
+                        mlm_probability=self.mlm_probability,
+                        mlm_strategy=self.mlm_strategy if split == "train" else "mlm", )
             for split, max_len in
             zip(["train", "valid", "test"], [self.max_length, self.max_length_val, self.max_length_test])
         ]

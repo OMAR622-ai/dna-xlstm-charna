@@ -19,6 +19,8 @@ except ImportError:
 
 from models import CaduceusConfig, Caduceus
 from models import xLSTMConfig, xLSTMLMHeadModel
+from models.charna import CharnaConfig, CharnaForMaskedLM
+from models.charna.modeling_charna import conjoined_hidden_states
 
 from src.models.sequence.long_conv_lm import LMBackbone
 from src.models.sequence.long_conv_lm import _init_weights
@@ -310,3 +312,33 @@ class DNAEmbeddingModelxLSTM(DNAEmbeddingModel):
         
         hidden_states = self.backbone.headless_forward(input_ids, inference_params=inference_params)
         return hidden_states, None
+
+
+### ChaRNABERT-style GBST + BERT
+
+class DNAEmbeddingModelCharna(DNAEmbeddingModel):
+    """GBST + BERT backbone for downstream tasks.
+
+    Wraps the full pretraining model so state-dict keys match the pretrained checkpoint under
+    `load_backbone` (backbone.backbone.* is loaded, backbone.lm_head.* is re-initialised).
+    """
+
+    def __init__(
+            self,
+            config: CharnaConfig,
+            conjoin_train=False,
+            conjoin_test=False,
+            device=None,
+            dtype=None,
+    ):
+        super(DNAEmbeddingModel, self).__init__()
+        self.config = config
+        self.d_model = config.d_model  # for decoder
+        self.backbone = CharnaForMaskedLM(config, device=device)
+        self.conjoin_train = conjoin_train
+        self.conjoin_test = conjoin_test
+
+    def forward(self, input_ids, position_ids=None, inference_params=None, state=None):  # state for the repo interface
+        if self.conjoin_train or (self.conjoin_test and not self.training):  # post-hoc conjoining (PH)
+            return conjoined_hidden_states(self.backbone.headless_forward, input_ids), None
+        return self.backbone.headless_forward(input_ids), None

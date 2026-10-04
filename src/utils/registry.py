@@ -29,12 +29,14 @@ model = {
     "caduceus_lm": "models.caduceus.modeling_caduceus.CaduceusForMaskedLM",
     "xlstm_lm":  "models.dna_xlstm.modelling_xlstm.xLSTMLMHeadModel",
     "llama_lm": "models.llama.modelling_llama.TransformerLMHeadModel",
+    "charna_lm": "models.charna.modeling_charna.CharnaForMaskedLM",
 
     # Downstream task embedding backbones
     "dna_embedding": "src.models.sequence.dna_embedding.DNAEmbeddingModel",
     "dna_embedding_mamba": "src.models.sequence.dna_embedding.DNAEmbeddingModelMamba",
     "dna_embedding_xlstm": "src.models.sequence.dna_embedding.DNAEmbeddingModelxLSTM",
     "dna_embedding_caduceus": "src.models.sequence.dna_embedding.DNAEmbeddingModelCaduceus",
+    "dna_embedding_charna": "src.models.sequence.dna_embedding.DNAEmbeddingModelCharna",
 
     # Baseline for genomics benchmark
     "genomics_benchmark_cnn": "src.models.baseline.genomics_benchmark_cnn.GenomicsBenchmarkCNN",
