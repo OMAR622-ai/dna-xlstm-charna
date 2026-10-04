@@ -10,7 +10,6 @@ import torch
 from pyfaidx import Fasta
 
 from src.dataloaders.utils.mlm import mlm_getitem
-from src.dataloaders.utils.ul2 import ul2_getitem
 from src.dataloaders.utils.rc import coin_flip, string_reverse_complement
 
 MAX_ALLOWED_LENGTH = 2 ** 20
@@ -101,7 +100,6 @@ class HG38Dataset(torch.utils.data.Dataset):
             max_length,
             mlm=False,
             mlm_probability=0.15,
-            mlm_strategy="mlm",
             pad_max_length=None,
             tokenizer=None,
             tokenizer_name=None,
@@ -112,9 +110,6 @@ class HG38Dataset(torch.utils.data.Dataset):
     ):
         self.mlm = mlm
         self.mlm_probability = mlm_probability
-        if mlm_strategy not in ("mlm", "ul2"):
-            raise ValueError(f"`mlm_strategy` must be 'mlm' or 'ul2', got {mlm_strategy}.")
-        self.mlm_strategy = mlm_strategy
         if self.mlm and self.mlm_probability <= 0.0:
             raise ValueError(f"`mlm_probability` has to be > 0.0, got {self.mlm_probability}.")
         if self.mlm:
@@ -218,10 +213,7 @@ class HG38Dataset(torch.utils.data.Dataset):
         # replace N token with a pad token, so we can ignore it in the loss
         seq = self.replace_value(seq, self.tokenizer._vocab_str_to_int["N"], self.tokenizer.pad_token_id)
 
-        if self.mlm and self.mlm_strategy == "ul2":
-            data, target = ul2_getitem(seq, contains_eos=self.add_eos, tokenizer=self.tokenizer)
-
-        elif self.mlm:
+        if self.mlm:
             data, target = mlm_getitem(
                 seq,
                 mlm_probability=self.mlm_probability,

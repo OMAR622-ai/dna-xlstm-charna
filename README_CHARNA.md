@@ -2,7 +2,7 @@
 
 This branch (`charna-gbst`) adds a ChaRNABERT-style model to the DNA-xLSTM code base: a
 **Gradient-Based Subword Tokenizer (GBST)** in front of a **bidirectional BERT-style Transformer
-encoder**, trained with **MLM** or **UL2**. It is pretrained on hg38 with the short-context
+encoder**, trained with masked language modelling (MLM). It is pretrained on hg38 with the short-context
 DNA-xLSTM protocol and evaluated on the 18-task **Nucleotide Transformer (NT) benchmark**, so the
 results are directly comparable with the Bio-xLSTM paper.
 
@@ -13,27 +13,27 @@ Papers used (all hyperparameters below cite one of them):
 | Bio-xLSTM | Schmidinger et al., *Bio-xLSTM: Generative modeling, representation and in-context learning of biological and chemical sequences*, arXiv:2411.04165 |
 | ChaRNABERT | *ChaRNABERT*, arXiv:2411.11808 |
 | Charformer | Tay et al., *Charformer: Fast Character Transformers via Gradient-based Subword Tokenization*, arXiv:2106.12672 |
-| UL2 | Tay et al., *UL2: Unifying Language Learning Paradigms*, arXiv:2205.05131 |
 
 ## Status (4 October 2026)
 
 | Step | State |
 |---|---|
-| Model, UL2, configs, tests | done, 22 unit tests pass |
-| Overfit one batch | done: MLM loss < 0.05 after 158 steps, UL2 after 229 steps |
+| Model, configs, tests | done, 18 unit tests pass |
+| Overfit one batch | done: MLM loss < 0.05 after 158 steps |
 | Smoke run (50M tokens, both models) | done, see [Smoke run](#smoke-run-50m-tokens) |
 | Full pretraining, GBST + BERT (10.5B tokens) | **running** (started 4 Oct 2026, ~40 h) |
 | Full pretraining, Transformer++-2M baseline | queued after GBST + BERT |
 | NT benchmark | pipeline ready and tested end to end; waits for pretrained checkpoints |
-| Ablations (d_s, MLM vs UL2, RC aug, GBST vs embedding) | not started |
+| Ablations (d_s, RC aug, GBST vs embedding) | not started |
 
 No final results are reported yet. Numbers in this file are from smoke runs only and are
 labelled as such.
 
 ## What was added
 
-All changes are additive: existing models and default behaviour are unchanged
-(`mlm_strategy` defaults to `"mlm"`, new registry names only).
+All changes are additive: existing models and default behaviour are unchanged. The only
+existing files that were edited are `src/models/sequence/dna_embedding.py` and
+`src/utils/registry.py` (new classes and registry names) and `README.md` (a link to this file).
 
 | File | Purpose |
 |---|---|
@@ -41,8 +41,6 @@ All changes are additive: existing models and default behaviour are unchanged
 | `models/charna/modeling_charna.py` | Encoder (RoPE, SwiGLU, QKNorm, LayerNorm), MLM head, reverse-complement helpers |
 | `models/charna/configuration_charna.py` | `CharnaConfig` (defaults = 2M model) |
 | `configs/model/charna.yaml` | Hydra model config (`model=charna`) |
-| `src/dataloaders/utils/ul2.py` | UL2 mixture of denoisers adapted to in-place `[MASK]` |
-| `src/dataloaders/datasets/hg38_dataset.py`, `src/dataloaders/genomics.py` | `mlm_strategy: mlm \| ul2` switch (train split only) |
 | `src/models/sequence/dna_embedding.py` | Downstream wrappers `DNAEmbeddingModelCharna` and `DNAEmbeddingModelTransformer` |
 | `src/utils/registry.py` | `charna_lm`, `dna_embedding_charna`, `dna_embedding_llama`, `metrics_csv` |
 | `src/callbacks/metrics_csv.py` | Writes validation/test metrics to `metrics.csv` (wandb is off on our server) |
@@ -108,14 +106,6 @@ learning rate for Transformer++, so the A4 values are used for both, as the repo
 Note that the repo's `scripts_pretrain/run_pretrain_llama.sh` uses `HIDDEN_DIM=1024` (4:1) and
 LR 8e-3, which differ from Table A3 (1.25:1, 1e-2 in bold). We follow Table A3.
 
-**UL2** (`MLM_STRATEGY=ul2`): the seven denoisers of UL2 Table 1, sampled uniformly per sequence:
-R (μ=3, r=0.15), R (μ=8, r=0.15), S (r=0.25), X (μ=3, r=0.5), X (μ=8, r=0.5), X (μ=64, r=0.15),
-X (μ=64, r=0.5). Spans are drawn with T5's `random_spans_noise_mask` (UL2 §9.2). Adaptations for
-an encoder-only model (our choices, not from the paper): corrupted positions are replaced in place
-by `[MASK]` and predicted at their positions (no sentinel tokens, no decoder); the S denoiser
-masks a suffix whose length is drawn uniformly from [1, L/2]; no mode tokens. Validation always
-uses standard 15% MLM so that the losses of MLM and UL2 runs are comparable.
-
 **NT benchmark** (Bio-xLSTM App. C.5, Table A5; repo `scripts_downstream/run_nucleotide.sh`):
 
 | Setting | Value | Source |
@@ -172,8 +162,7 @@ python -m unittest tests.test_charna tests.test_downstream -v
 **Overfit one batch** (should reach loss < 0.05)
 
 ```bash
-python scripts_charna/overfit_one_batch.py --strategy mlm
-python scripts_charna/overfit_one_batch.py --strategy ul2
+python scripts_charna/overfit_one_batch.py --fasta data/hg38/hg38.ml.fa --bed data/hg38/human-sequences.bed
 ```
 
 **Pretraining** (from `scripts_pretrain/`; every setting is an environment variable, see the script)
@@ -181,7 +170,6 @@ python scripts_charna/overfit_one_batch.py --strategy ul2
 ```bash
 bash run_pretrain_charna.sh                                    # GBST + BERT, MLM, 10k steps
 MODEL=llama bash run_pretrain_charna.sh                        # Transformer++-2M baseline
-MLM_STRATEGY=ul2 RUN_NAME=charna_ul2 bash run_pretrain_charna.sh   # UL2
 DOWNSAMPLE=2 RUN_NAME=charna_ds2 bash run_pretrain_charna.sh       # ablation d_s = 2
 TOKENIZER=embedding RUN_NAME=charna_emb bash run_pretrain_charna.sh  # ablation: no GBST
 ```
