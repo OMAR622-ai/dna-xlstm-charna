@@ -23,13 +23,15 @@ Papers used (all hyperparameters below cite one of them):
 | Model, UL2, configs, tests | done, 23 unit tests pass |
 | Overfit one batch | done: loss < 0.05 after 164 steps (MLM) and 230 steps (UL2) |
 | Smoke run (50M tokens, both models) | done, see [Smoke run](#smoke-run-50m-tokens) |
-| Full pretraining, GBST + BERT (10.5B tokens) | **running** (restarted 4 Oct 2026 with the paper-exact GBST and LR 5e-4, ~40 h). A first attempt with the earlier GBST and LR 1e-2 was stopped after ~1 h |
-| Full pretraining, Transformer++-2M baseline | queued after GBST + BERT |
-| NT benchmark | pipeline ready and tested end to end; waits for pretrained checkpoints |
+| Small experiment (≈0.5B tokens, 4 NT tasks, both models) | **running** since 4 Oct 2026 16:20 CEST, see [Small experiment](#small-experiment-05b-tokens-4-nt-tasks) |
+| Full pretraining (10.5B tokens, both models) | on hold until the small experiment is reviewed. Two started runs were stopped: one with the earlier GBST and LR 1e-2 (~1 h), one with the final settings (~30 min) |
+| NT benchmark (18 tasks) | pipeline ready and tested end to end; waits for the full pretraining |
 | Ablations (d_s, MLM vs UL2, RC aug, GBST vs embedding) | not started |
 
-No final results are reported yet. Numbers in this file are from smoke runs only and are
-labelled as such.
+No final results are reported yet. Numbers in this file are from smoke runs and the small
+experiment and are labelled as such. All result files are in
+[`charna_project/results/`](charna_project/results/); the data that fits in git is in
+[`charna_project/datasets/`](charna_project/datasets/).
 
 ## What was added
 
@@ -54,7 +56,9 @@ All changes are additive: existing models and default behaviour are unchanged
 | `scripts_charna/train_charna.py` | Launcher for GPUs without mamba_ssm / flash_attn (see [Hardware](#hardware-and-environment)) |
 | `scripts_charna/overfit_one_batch.py`, `scripts_charna/smoke_run.sh` | Sanity checks |
 | `tests/test_charna.py`, `tests/test_downstream.py` | Unit tests |
-| `charna_project/` | Copies of all files above in one folder, plus a patch of the changes to existing files (rebuilt by `scripts_charna/export_project_folder.sh`) |
+| `scripts_charna/download_data.sh`, `scripts_charna/make_hg38_sample.py` | Download and check the full data; build the small hg38 sample |
+| `scripts_charna/collect_results.sh` | Copy run results (metrics, configs, summaries) into `charna_project/results/` |
+| `charna_project/` | The whole project in one folder: copies of all files above, a patch of the changes to existing files, the data that fits in git (`datasets/`) and the run results (`results/`) |
 
 ## Model
 
@@ -186,8 +190,18 @@ for compute capability 6.1.
 
 ## How to run
 
-All commands from the repository root unless stated otherwise. Data: `data/hg38/hg38.ml.fa`,
-`hg38.ml.fa.fai`, `human-sequences.bed` (see the main README, "Data Preparation").
+All commands from the repository root unless stated otherwise.
+
+**Data**
+
+```bash
+bash scripts_charna/download_data.sh   # full hg38 (3.1 GB) into data/hg38/ + md5 check, NT tasks into the HF cache
+```
+
+The full genome is too large for GitHub (files over 100 MB are refused). A 4.3 MB sample of 32 real
+hg38 intervals is in `charna_project/datasets/hg38_sample/`; it works with every command below
+in place of `data/hg38/...` (set `HG38_FASTA` / `HG38_BED` for the tests, or `dataset.fasta_file`
+/ `dataset.bed_file` for training), but is only meant for trying the code.
 
 **Tests**
 
@@ -225,6 +239,29 @@ python ../scripts_charna/summarize_nt.py ../outputs/downstream/nt_cv10_ep20 --ma
 ```
 
 Finished runs are skipped when the script is restarted.
+
+## Small experiment (0.5B tokens, 4 NT tasks)
+
+A small version of the whole pipeline, to see results before the 40 h full runs
+(`~/charna/run_small_queue.sh` on the server):
+
+1. **Pretraining**, both models, 500 steps × 2²⁰ tokens ≈ 0.5B tokens (5% of the full run), with
+   the full-run settings; the learning-rate schedule scales with the step count (50 warmup steps,
+   cosine to 1e-4). GBST + BERT at LR 5e-4, Transformer++-2M at LR 1e-2. Validation every 100 steps
+   on 2% of the validation set (the full run uses 12.5%).
+2. **NT fine-tuning** on 4 of the 18 tasks, one per group, with the DNA-xLSTM-PH settings of
+   Bio-xLSTM Table A5, 3 seeds (the full benchmark uses 10), 20 epochs, PH:
+
+   | Task | Metric | LR | Batch |
+   |---|---|---|---|
+   | H3 | MCC | 8e-4 | 128 |
+   | enhancers | MCC | 2e-3 | 512 |
+   | promoter_tata | F1 | 3e-3 | 128 |
+   | splice_sites_all | accuracy | 8e-4 | 64 |
+
+**Results:** running; this section will be filled in from `charna_project/results/` when the runs
+finish. These are early results after 5% of the pretraining, for checking the pipeline and the
+trend, not final numbers.
 
 ## Smoke run (50M tokens)
 

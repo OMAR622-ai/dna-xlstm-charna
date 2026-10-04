@@ -1,7 +1,8 @@
 """Unit tests for the GBST + BERT model and UL2 masking.
 
 Run from the repo root:  python -m unittest tests.test_charna -v
-Data tests use HG38_FASTA / HG38_BED (default: data/hg38/hg38.ml.fa, human-sequences.bed)
+Data tests use HG38_FASTA / HG38_BED (default: data/hg38/hg38.ml.fa, human-sequences.bed;
+the small sample in charna_project/datasets/hg38_sample works too)
 and are skipped if the files are missing.
 """
 
@@ -248,7 +249,7 @@ class TestHG38Dataset(unittest.TestCase):
         torch.manual_seed(0)
         for strategy in ("mlm", "ul2"):
             ds = self._dataset(strategy)
-            data, target = ds[12345]
+            data, target = ds[len(ds) // 2]  # works for the full data and the repo sample
             self.assertEqual(data.shape, (1024,))
             self.assertEqual(target.shape, (1024,))
             self.assertTrue(bool(((target == PAD_ID) | (target >= 7)).all()))
