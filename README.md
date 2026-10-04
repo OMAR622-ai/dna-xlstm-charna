@@ -12,6 +12,7 @@ results are directly comparable with the Bio-xLSTM paper.
 | | |
 |---|---|
 | Everything in one folder (code, data, results) | [`charna_project/`](charna_project/) |
+| **Every run, one page each** (settings, command, results, files) and the project log | [`charna_project/runs/`](charna_project/runs/README.md) |
 | Results of the runs | [`charna_project/results/`](charna_project/results/) |
 | Data (interval list, hg38 sample, download script) | [`charna_project/datasets/`](charna_project/datasets/), [`scripts_charna/download_data.sh`](scripts_charna/download_data.sh) |
 | Model code (GBST + encoder) | [`models/charna/`](models/charna/) |
@@ -36,7 +37,8 @@ Papers used (all hyperparameters below cite one of them):
 | Overfit one batch | done: loss < 0.05 after 164 steps (MLM) and 230 steps (UL2) |
 | Smoke run (50M tokens, both models) | done, see [Smoke run](#smoke-run-50m-tokens) |
 | Small experiment (≈0.5B tokens, both models, accuracy + loss curve) | **done** (4 Oct 2026, 22:05 CEST), see [Small experiment](#small-experiment-05b-tokens): both ≈44% masked-base accuracy, GBST-BERT very slightly ahead |
-| Full pretraining (10.5B tokens, both models) | on hold until the small experiment is reviewed. Two started runs were stopped: one with the earlier GBST and LR 1e-2 (~1 h), one with the final settings (~30 min) |
+| Learning-rate check (GBST-BERT, 1e-3 / 2e-3 / 5e-3, 500 steps each) | **running** since 4 Oct 2026 22:10 CEST ([R13–R15](charna_project/runs/README.md)) |
+| Full pretraining (10.5B tokens, both models) | **queued**: starts automatically after the learning-rate check with the best LR ([R16–R18](charna_project/runs/README.md)). Two earlier attempts were stopped: earlier GBST + LR 1e-2 after 1 h 10 min, final settings after 1 h 8 min |
 | NT benchmark (18 tasks) | pipeline ready and tested end to end; waits for the full pretraining |
 | Ablations (d_s, MLM vs UL2, RC aug, GBST vs embedding) | not started |
 

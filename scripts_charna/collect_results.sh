@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copy the small result files of all runs (metrics, configs, summaries; no checkpoints or logs)
+# Copy the small result files of all runs (metrics, full resolved configs, main train.log,
+# summaries, evaluation tables; no checkpoints and no progress-bar logs)
 # from an outputs/ directory into charna_project/results/, keeping the directory layout.
 #   bash scripts_charna/collect_results.sh [outputs_dir] [destination]
 
@@ -10,7 +11,7 @@ mkdir -p "${DEST}"
 DEST=$(realpath "${DEST}")
 
 cd "${SRC}"
-find . -type f \( -name metrics.csv -o -name model_config.json -o -name summary.txt \
+find . -type f \( -name metrics.csv -o -name model_config.json -o -name config.json -o -name train.log -o -name summary.txt \
     -o -name queue.txt -o -name "nt_results*.md" -o -name "eval_*.md" -o -name "eval_*.csv" \) |
   while read -r f; do
     mkdir -p "${DEST}/$(dirname "$f")"
