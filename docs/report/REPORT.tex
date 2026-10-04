@@ -1,0 +1,354 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+
+\definecolor{accent}{HTML}{1F5A85}
+\definecolor{soft}{HTML}{EEF3F8}
+\hypersetup{colorlinks=true,linkcolor=accent,urlcolor=accent}
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small GBST + BERT on human DNA}
+\rhead{\small Progress report, 4 October 2026}
+\cfoot{\small\thepage}
+
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries\color{accent} A ChaRNABERT-style model for human DNA}\\[6pt]
+{\large GBST tokenization + bidirectional BERT encoder, on the DNA-xLSTM code base}\\[10pt]
+Progress report \quad$\cdot$\quad Omar R.A Mohamed \quad$\cdot$\quad 4 October 2026, 18:30 CEST\\[4pt]
+Code: \url{https://github.com/OMAR622-ai/dna-xlstm-charna} (branch \code{charna-gbst}, private)
+\end{center}
+
+\vspace{4pt}
+\noindent\colorbox{soft}{\parbox{\dimexpr\linewidth-2\fboxsep}{
+\textbf{Summary.} The ChaRNABERT architecture --- a learnable tokenizer (GBST) in front of a
+bidirectional BERT encoder --- was implemented in the DNA-xLSTM code base, tested (23 automatic
+tests pass) and adapted to human DNA (hg38). It is being pretrained on 0.5 billion bases, next to
+a same-size comparison model without GBST (Transformer++). First result: the validation loss of
+GBST-BERT fell from 1.340 (0.1 B bases) to 1.301 (0.2 B bases); random guessing is 1.386.
+The accuracy table and loss curves of both models are expected tonight, 4 October, and will be
+added to an updated version of this report. No benchmark (downstream task) results yet.
+}}
+
+\tableofcontents
+\vspace{6pt}
+
+% ------------------------------------------------------------------------------------------
+\section{Goal}
+
+The project asks whether a \emph{learned} way of reading DNA helps a small model. ChaRNABERT
+(Morales-Pastor et al., 2024) showed this for RNA. We take its architecture, train it on the human
+genome with the short-context protocol of the DNA-xLSTM paper (Schmidinger et al., 2024), and
+compare it with models from that paper. The plan has three parts: (1) pretraining on hg38 with
+masked language modelling; (2) evaluation on held-out DNA (accuracy and loss); (3) later, the
+18-task Nucleotide Transformer (NT) benchmark. Parts (1)--(2) are running; part (3) is ready but
+postponed.
+
+% ------------------------------------------------------------------------------------------
+\section{How the ChaRNABERT model works}
+
+ChaRNABERT is an RNA ``foundation model'' from Nostrum Biodiscovery (arXiv:2411.11808). Its name
+combines \emph{Cha}racter (single letters), \emph{RNA} and \emph{BERT}. Its central idea: most
+models fix in advance how a sequence is cut into ``words'' (single bases, codons, k-mers);
+ChaRNABERT lets the model \textbf{learn how to cut, separately at every position}.
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw=accent, rounded corners=3pt, fill=soft, minimum height=1.0cm, align=center, font=\small, text width=2.45cm},
+  arr/.style={-{Latex[length=2.5mm]}, thick, accent}]
+\node[box] (in) {DNA / RNA\\letters};
+\node[box, right=0.45cm of in] (emb) {\textcircled{1} Embedding\\letters $\to$ numbers};
+\node[box, right=0.45cm of emb] (gbst) {\textcircled{2} GBST\\learns how to read};
+\node[box, right=0.45cm of gbst] (enc) {\textcircled{3} BERT encoder\\bases ``talk''};
+\node[box, right=0.45cm of enc] (head) {\textcircled{4} Head\\guess hidden base};
+\draw[arr] (in) -- (emb); \draw[arr] (emb) -- (gbst); \draw[arr] (gbst) -- (enc); \draw[arr] (enc) -- (head);
+\end{tikzpicture}
+\end{center}
+
+\textbf{\textcircled{1} Embedding --- letters become numbers.} Each letter is replaced by a learned
+list of numbers (256 in our model), like a profile describing that nucleotide.
+
+\textbf{\textcircled{2} GBST (Gradient-Based Subsequence Tokenization) --- learning how to read.}
+\begin{enumerate}
+\item \emph{Smooth}: each base is mixed a little with its neighbours (a short filter).
+\item \emph{List candidates}: at every position, every block of 1, 2, 3 or 4 bases that contains
+  the position. Blocks of the same size start at different places, like reading frames
+  (``offsets''). This gives 10 candidates per position (Table~\ref{tab:gbst}).
+\item \emph{Score}: a small learned scorer rates each candidate (``how useful is this reading
+  here?''); the scores become weights that add up to 1.
+\item \emph{Make the choice consistent}: positions with similar weight patterns pull towards
+  each other, so the ``reading style'' is consistent along the sequence (ChaRNABERT Eq.~6).
+\item \emph{Blend}: each base's output is the weighted mix of its 10 candidates. There is one
+  output per base --- ChaRNABERT removes Charformer's shortening step, because many tasks need
+  single-base detail.
+\end{enumerate}
+Biology analogy: a ribosome reads triplets, a transcription factor a 6--10-base motif, a methylase
+CpG pairs. GBST can learn to read ``like a ribosome'' in one place and ``like a methylase'' in
+another, without being told which.
+
+\begin{table}[h]
+\centering
+\caption{The 10 GBST candidates for position 3 (the first T) of \code{ACGTTGCA}.}
+\label{tab:gbst}
+\small
+\begin{tabular}{cl}
+\toprule
+Block size & Candidate blocks that contain position 3 \\
+\midrule
+1 & \code{T} \\
+2 & \code{TT} (positions 3--4), \code{GT} (2--3) \\
+3 & \code{TTG} (3--5), \code{GTT} (2--4), \code{CGT} (1--3) \\
+4 & \code{TTGC} (3--6), \code{GTTG} (2--5), \code{CGTT} (1--4), \code{ACGT} (0--3) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{\textcircled{3} BERT encoder --- bases talk to each other.} A stack of identical blocks
+(4 in our model). In each block, \emph{attention} lets every base gather information from every
+other base, in both directions (\emph{bidirectional}); then a small \emph{feed-forward} network
+processes each position. The paper adds RoPE (encodes distances between bases), QKNorm (keeps
+training stable), SwiGLU (a better feed-forward type) and FlashAttention~2 (faster attention).
+
+\textbf{\textcircled{4} Prediction head.} For every position, a score for each possible letter.
+
+\textbf{Learning: the fill-in-the-blank game.} In \emph{pretraining}, 15\% of the bases are hidden
+and the model must guess them from the context (\emph{masked language modelling}, MLM). To do this
+well it must learn motifs, codon patterns, pairing rules --- without any labels. The paper also
+tested \emph{UL2}, which additionally hides longer stretches. ChaRNABERT was trained on 62 million
+RNA sequences (31 M non-coding from RNAcentral, 31 M coding from RefSeq), with models of 8 M to
+650 M parameters. Afterwards it is \emph{fine-tuned} on specific labelled questions.
+
+\textbf{What the paper found.} GBST gave a lower loss than single-letter reading in most settings
+(e.g.\ 0.498 vs.\ 0.508 for the 5 M model, Table~2); performance saturated around 30--50 M
+parameters; the 8 M model matched or beat much larger models on several tasks, e.g.\ RNA--protein
+binding F1 0.833 vs.\ 0.831 for the 650 M RiNALMo (Table~5).
+
+% ------------------------------------------------------------------------------------------
+\section{How we apply ChaRNABERT to DNA}
+
+\textbf{The model stays the same; the data and the setting change.}
+
+\begin{enumerate}
+\item \textbf{DNA instead of RNA.} The human genome hg38 (about 3 billion letters), in pieces of
+  1,024 bases. Alphabet A, C, G, T (N = unknown, ignored).
+\item \textbf{Letters to numbers.} A\,=\,7, C\,=\,8, G\,=\,9, T\,=\,10 (the repository's tokenizer).
+\item \textbf{The same game.} 15\% of the bases are hidden and must be guessed; with 50\%
+  chance the reverse-complement strand is shown instead, so the model learns that both strands
+  are equivalent.
+\begin{center}\small
+\begin{tabular}{ll}
+Real:   & \code{A C G T T G C A A G T C} \\
+Input:  & \code{A C ? T T G C A A ? T C} \\
+Answer: & \code{. . G . . . . . . G . .} \quad (dots: not hidden, not graded)
+\end{tabular}
+\end{center}
+\item \textbf{The same architecture}, GBST + BERT encoder, but small: 2.1 million parameters, the
+  size of the DNA-xLSTM paper's models, so the comparison is fair.
+\item \textbf{Train, test, compare.} Train on millions of DNA pieces; test on DNA never seen in
+  training (accuracy of the guesses); compare with the same encoder \emph{without} GBST
+  (Transformer++). If ours guesses better, GBST helps on DNA.
+\end{enumerate}
+
+\begin{table}[h]
+\centering
+\caption{ChaRNABERT paper vs.\ this project.}
+\small
+\begin{tabularx}{0.9\linewidth}{lLL}
+\toprule
+ & ChaRNABERT paper & This project \\
+\midrule
+Data & RNA (RNAcentral, RefSeq) & Human DNA (hg38) \\
+Letters & A, C, G, U & A, C, G, T \\
+Model & GBST + BERT & GBST + BERT (same) \\
+Training game & Guess hidden bases (MLM; UL2 tested) & Same (MLM; UL2 available as an option) \\
+Model size & 8 M -- 650 M parameters & 2.1 M (to compare with DNA-xLSTM) \\
+Piece length & up to 8,190 bases & 1,024 bases (DNA-xLSTM protocol) \\
+Later tasks & BEACON RNA benchmark & Nucleotide Transformer DNA benchmark \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ------------------------------------------------------------------------------------------
+\section{What was done, step by step}
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Read the code base and the four papers} (Bio-xLSTM, ChaRNABERT, Charformer, UL2);
+  every setting was taken from a paper table or section, or marked as our own choice.
+\item \textbf{Server set-up.} JKU server \code{student01}: 4$\times$ NVIDIA GTX 1080 Ti, shared with
+  another user. Installed a Python environment that works on these older GPUs (PyTorch 2.2 +
+  CUDA 12.1); newer PyTorch versions no longer support them. Copied the genome (3.1 GB) and checked
+  it with an md5 checksum. Set up key-based SSH login.
+\item \textbf{Implemented the model} (\code{models/charna/}): GBST (\code{gbst.py}), the
+  bidirectional encoder and prediction head (\code{modeling\_charna.py}), settings
+  (\code{configuration\_charna.py}), and registered it in the training program. Existing models
+  behave exactly as before.
+\item \textbf{Implemented UL2 masking} as an option (\code{src/dataloaders/utils/ul2.py}).
+\item \textbf{A launcher} (\code{scripts\_charna/train\_charna.py}) so the repository's training
+  program runs on GPUs that cannot install two optional packages (mamba\_ssm, flash\_attn).
+\item \textbf{Scripts}: pretraining (\code{run\_pretrain\_charna.sh}), benchmark fine-tuning,
+  results table, loss plot, accuracy evaluation (\code{evaluate\_mlm.py}), data download with
+  checksum, a small genome sample for GitHub, result collection.
+\item \textbf{Tests}: 23 automatic tests (Section~\ref{sec:results}); a check that the model can
+  memorise one batch; a 3-step trial on 4 GPUs; a 48-step smoke run of both models.
+\item \textbf{Matched the paper exactly} where possible (after review on 4 October): added the
+  ``pointwise'' layer that ChaRNABERT's parameter table (Table~9) implies; switched the learning
+  rate to ChaRNABERT's 5e-4 (Table~2); restored UL2 as an option.
+\item \textbf{Bugs found and fixed}: (a) loading pretrained GBST weights into the benchmark code
+  crashed; (b) the benchmark data loader mixed all 18 tasks together (461,850 examples instead
+  of e.g.\ 5,509) --- a bug in the original repository caused by a change on Hugging Face; (c) a
+  results file wrote values under wrong column names; (d) the GitHub genome sample first held
+  only 1/8 of each region; (e) smaller script issues (wrong exit status in a log, a path error).
+\item \textbf{Small experiment} (running since 16:20 CEST): both models trained for 500 steps
+  ($\approx$0.5 billion bases); then accuracy evaluation on 2,048 held-out sequences. The
+  40-hour full run was stopped to get results sooner; the benchmark was postponed.
+\item \textbf{Documentation and GitHub}: project README (front page), a beginner's explanation
+  (\code{docs/EXPLAINED.md}), everything collected in one folder (\code{charna\_project/}: code,
+  data that fits in git, results), and this report.
+\end{enumerate}
+
+\textbf{Main settings} (all for GBST-BERT; source in brackets):
+\begin{center}\small
+\begin{tabularx}{0.95\linewidth}{lL}
+\toprule
+Model & 256 numbers per base, 4 encoder blocks, 8 attention heads, 2,107,392 parameters [Bio-xLSTM Table A3] \\
+GBST & blocks of 1--4 bases with offsets, sum pooling, calibration, no shortening [ChaRNABERT \S3.2] \\
+Masking & 15\% of bases; of these 80\% \code{[MASK]}, 10\% random, 10\% unchanged [Bio-xLSTM App.~C.5] \\
+Batch & 1,024 sequences $\times$ 1,024 bases = 1,048,576 bases per step [Bio-xLSTM App.~C.5] \\
+Learning rate & 5e-4 [ChaRNABERT Table 2]; warmup 10\% of steps, cosine decay [Bio-xLSTM Table A4] \\
+Optimizer & AdamW, $\beta=(0.9, 0.95)$, weight decay 0.1 [Bio-xLSTM Table A4] \\
+Length of training & small experiment 500 steps (0.5 B bases); full run 10,000 steps (10.5 B) \\
+Comparison model & Transformer++-2M, learning rate 1e-2 [Bio-xLSTM Table A3] \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ------------------------------------------------------------------------------------------
+\section{Results so far}
+\label{sec:results}
+
+\textbf{Automatic tests: 23 of 23 pass.} They check, among others, that GBST matches a slow
+reference implementation of the paper's equations, that it has the weight count of the paper's
+Table~9, that the model looks in both directions, that the loss counts only hidden bases, that
+about 15\% of bases are hidden, that UL2 never leaks the answer, and that pretrained weights load
+correctly into the benchmark code.
+
+\textbf{Memorising one batch: passed.} The loss fell below 0.05 after 164 steps (MLM) and 230
+steps (UL2), so the model is able to learn.
+
+\textbf{Smoke run} (48 steps, 50 million bases, an earlier GBST version with learning rate 1e-2).
+Loss is in nats per hidden base; 1.386 = random guessing among 4 bases.
+
+\begin{center}
+\begin{minipage}{0.42\linewidth}\small
+\begin{tabular}{rcc}
+\toprule
+Bases & GBST-BERT & Transformer++ \\
+\midrule
+13 M & 1.392 & 1.397 \\
+25 M & 1.370 & 1.363 \\
+38 M & 1.366 & 1.343 \\
+50 M & 1.364 & 1.325 \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}{0.55\linewidth}
+\includegraphics[width=\linewidth]{figures/smoke_val_loss.png}
+\end{minipage}
+\end{center}
+
+Both models learn, but this run only checked that everything works: it was very short and used
+the older GBST and learning rate. A test of the accuracy script on these smoke models showed why
+accuracy needs reference values: the smoke GBST model reached 29.1\% only by always answering
+``A'' (the most common hidden base), i.e.\ no better than no model; Transformer++ reached 32.8\%.
+
+\textbf{Small experiment (running).} Current GBST-BERT validation loss (2\% of the validation set):
+
+\begin{center}\small
+\begin{tabular}{rrcc}
+\toprule
+Step & Bases seen & Validation loss & Test loss \\
+\midrule
+100 & 0.10 B & 1.3399 & 1.3437 \\
+200 & 0.21 B & 1.3011 & 1.3013 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The loss is falling clearly below the random-guess level (1.386) and below the smoke run.
+Still to come tonight: steps 300--500, the Transformer++ run, and the accuracy table (loss,
+accuracy, accuracy per base, compared with random guessing and with always guessing the most
+common base).
+
+\textbf{Not done yet:} the full 10.5-billion-base training, the NT benchmark, and the planned
+comparisons (with/without GBST at full scale, MLM vs.\ UL2, with/without strand flipping).
+
+% ------------------------------------------------------------------------------------------
+\section{Differences from the papers}
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}p{3.4cm}L}
+\toprule
+Paper & This project & Reason \\
+\midrule
+FlashAttention 2, bf16 numbers & standard attention, fp32 & Our GTX 1080 Ti GPUs support neither; the result is the same, only slower \\
+Eq.~3: offsets written as $X_{i+o:i+o+b}$ & blocks that contain position $i$ & Read literally, a position would get blocks that do not include it; the text (reading frames) describes our version \\
+Eq.~9: SwiGLU written as $\sigma(xW_1)\odot\text{swish}(xW_2)$ & standard SwiGLU & The text cites the standard SwiGLU; the printed formula is a different function \\
+Eq.~1: depthwise convolution & + a $256\times256$ pointwise layer & The paper's Table~9 counts $d\cdot M + d^2$ weights, which implies it \\
+Maximum block size not stated & 4 & As in Charformer's figure (our choice) \\
+RNA, 2--8 k bases, 8--650 M parameters & DNA, 1,024 bases, 2 M & Comparability with DNA-xLSTM (project plan) \\
+Repository Transformer++ script: LR 8e-3, hidden size 1,024 & LR 1e-2, hidden size 320 & We follow the Bio-xLSTM paper's Table A3 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Uncertain points:} the block size (4); our reading of Eq.~3 and Eq.~9; the inferred
+pointwise layer; whether learning rate 5e-4 (best for ChaRNABERT's 5 M RNA model) is also good for
+a 2 M DNA model with much larger batches; the small experiment validates on only 2\% of the
+validation data, so its curve is noisier than the full run's will be.
+
+% ------------------------------------------------------------------------------------------
+\section{Next steps}
+\begin{enumerate}
+\item Tonight: finish the small experiment; add the loss curves and the accuracy table to this
+  report and to GitHub.
+\item Review the results together; decide whether to start the full 40-hour training, and for
+  which models.
+\item After full training: the Nucleotide Transformer benchmark (18 tasks) and the comparisons.
+\end{enumerate}
+
+\section*{References}
+\small
+\begin{itemize}[leftmargin=*]
+\item Morales-Pastor et al. (2024). Character-level Tokenizations as Powerful Inductive Biases for
+  RNA Foundational Models (ChaRNABERT). arXiv:2411.11808.
+\item Schmidinger et al. (2024). Bio-xLSTM: Generative modeling, representation and in-context
+  learning of biological and chemical sequences. arXiv:2411.04165.
+\item Tay et al. (2022). Charformer: Fast Character Transformers via Gradient-based Subword
+  Tokenization. ICLR 2022, arXiv:2106.12672.
+\item Tay et al. (2023). UL2: Unifying Language Learning Paradigms. ICLR 2023, arXiv:2205.05131.
+\item Devlin et al. (2019). BERT: Pre-training of Deep Bidirectional Transformers for Language
+  Understanding. NAACL 2019.
+\end{itemize}
+
+\end{document}
