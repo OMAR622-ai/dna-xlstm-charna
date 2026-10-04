@@ -34,7 +34,7 @@ Papers used (all hyperparameters below cite one of them):
 | Model, UL2, configs, tests | done, 23 unit tests pass |
 | Overfit one batch | done: loss < 0.05 after 164 steps (MLM) and 230 steps (UL2) |
 | Smoke run (50M tokens, both models) | done, see [Smoke run](#smoke-run-50m-tokens) |
-| Small experiment (≈0.5B tokens, 4 NT tasks, both models) | **running** since 4 Oct 2026 16:20 CEST, see [Small experiment](#small-experiment-05b-tokens-4-nt-tasks) |
+| Small experiment (≈0.5B tokens, both models, accuracy + loss curve) | **running** since 4 Oct 2026 16:20 CEST, see [Small experiment](#small-experiment-05b-tokens) |
 | Full pretraining (10.5B tokens, both models) | on hold until the small experiment is reviewed. Two started runs were stopped: one with the earlier GBST and LR 1e-2 (~1 h), one with the final settings (~30 min) |
 | NT benchmark (18 tasks) | pipeline ready and tested end to end; waits for the full pretraining |
 | Ablations (d_s, MLM vs UL2, RC aug, GBST vs embedding) | not started |
@@ -64,6 +64,7 @@ All changes are additive: existing models and default behaviour are unchanged
 | `scripts_pretrain/run_pretrain_charna.sh` | Pretraining (GBST + BERT or Transformer++, same protocol) |
 | `scripts_downstream/run_nucleotide_charna.sh` | NT benchmark fine-tuning |
 | `scripts_charna/summarize_nt.py` | NT results table (best grid point per task, mean ± std and range) |
+| `scripts_charna/evaluate_mlm.py` | Masked-base accuracy and loss of pretrained models on held-out sequences |
 | `scripts_charna/train_charna.py` | Launcher for GPUs without mamba_ssm / flash_attn (see [Hardware](#hardware-and-environment)) |
 | `scripts_charna/overfit_one_batch.py`, `scripts_charna/smoke_run.sh` | Sanity checks |
 | `tests/test_charna.py`, `tests/test_downstream.py` | Unit tests |
@@ -262,28 +263,31 @@ python scripts_charna/plot_metrics.py \
 A step-by-step explanation of the whole project for beginners is in
 [docs/EXPLAINED.md](docs/EXPLAINED.md).
 
-## Small experiment (0.5B tokens, 4 NT tasks)
+## Small experiment (0.5B tokens)
 
-A small version of the whole pipeline, to see results before the 40 h full runs
-(`~/charna/run_small_queue.sh` on the server):
+A small version of the pretraining, to see results before the 40 h full runs: does the model
+learn to predict hidden DNA bases, and how does it compare with the same model without GBST?
+(Server scripts `~/charna/run_small_queue.sh` and `~/charna/run_small_queue2.sh`.)
 
 1. **Pretraining**, both models, 500 steps × 2²⁰ tokens ≈ 0.5B tokens (5% of the full run), with
    the full-run settings; the learning-rate schedule scales with the step count (50 warmup steps,
-   cosine to 1e-4). GBST + BERT at LR 5e-4, Transformer++-2M at LR 1e-2. Validation every 100 steps
-   on 2% of the validation set (the full run uses 12.5%).
-2. **NT fine-tuning** on 4 of the 18 tasks, one per group, with the DNA-xLSTM-PH settings of
-   Bio-xLSTM Table A5, 3 seeds (the full benchmark uses 10), 20 epochs, PH:
+   cosine to 1e-4). GBST + BERT at LR 5e-4, Transformer++-2M at LR 1e-2. Validation loss every
+   100 steps on 2% of the validation set (the full run uses 12.5%).
+2. **Evaluation** of the final models (step 500) with `scripts_charna/evaluate_mlm.py`: the same
+   2,048 held-out sequences (validation split and test split, evenly spaced) are masked in exactly
+   the same way for both models (15%, fixed seed, no strand flipping). Reported: loss, accuracy of
+   the best guess among A/C/G/T on the hidden bases, accuracy per base, and two references
+   without a model (random guess 25%; always guessing the most common hidden base).
 
-   | Task | Metric | LR | Batch |
-   |---|---|---|---|
-   | H3 | MCC | 8e-4 | 128 |
-   | enhancers | MCC | 2e-3 | 512 |
-   | promoter_tata | F1 | 3e-3 | 128 |
-   | splice_sites_all | accuracy | 8e-4 | 64 |
+The NT benchmark is not part of the small experiment (decided on 4 Oct 2026); the fine-tuning
+pipeline is ready for later.
 
-**Results:** running; this section will be filled in from `charna_project/results/` when the runs
-finish. These are early results after 5% of the pretraining, for checking the pipeline and the
-trend, not final numbers.
+Why the reference rows matter: in a test of the evaluation script on the 48-step smoke models
+(64 sequences), the smoke GBST model reached 29.1% accuracy only by always guessing "A", exactly
+the "always most common base" reference; the smoke Transformer++ reached 32.8%.
+
+**Results:** running; the loss curve and the accuracy table will be added here when the runs
+finish. These are early results after 5% of the pretraining, not final numbers.
 
 ## Smoke run (50M tokens)
 
