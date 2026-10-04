@@ -17,9 +17,9 @@ The full project documentation is the repository's main [README.md](../README.md
 
 | Path | What it is |
 |---|---|
-| `datasets/hg38/human-sequences.bed` | The full list of pretraining intervals (38,171 intervals of 131,072 bp with train/valid/test split), as used in all runs |
+| `datasets/hg38/human-sequences.bed` | The full list of pretraining regions (38,171 rows: chromosome, start, end, train/valid/test split), as used in all runs. The dataset reads 2²⁰ = 1,048,576 bases from each start and cuts them into 1,024 windows of 1,024 bases |
 | `datasets/hg38/hg38.ml.fa.fai` | Index of the full genome FASTA |
-| `datasets/hg38_sample/hg38_sample.fa`, `human-sequences_sample.bed` | **Sample** for trying the code: 32 real hg38 intervals (24 train, 4 valid, 4 test, 4.3 MB), made with `scripts_charna/make_hg38_sample.py` (seed 0) |
+| `datasets/hg38_sample/hg38_sample.fa`, `human-sequences_sample.bed` | **Sample** for trying the code: 8 real hg38 regions of up to 1,048,576 bases (6 train, 1 valid, 1 test; 7.9 MB), made with `scripts_charna/make_hg38_sample.py` (seed 0). The dataset reads it exactly like the full data |
 
 **Not in git:** the full genome `hg38.ml.fa` is 3.1 GB (about 900 MB compressed); GitHub accepts
 files up to 100 MB. `bash scripts_charna/download_data.sh` downloads it from the DNA-xLSTM

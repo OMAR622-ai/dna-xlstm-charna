@@ -1,10 +1,10 @@
 """Build a small hg38 sample (a few real pretraining intervals) that fits in the git repository.
 
 The full genome (hg38.ml.fa, 3.1 GB) is too large for GitHub. This script picks a fixed random
-subset of the intervals in human-sequences.bed (per split), writes each interval as its own FASTA
-record named <chr>_<start>_<end>, and writes a matching BED file with coordinates relative to
-that record. HG38Dataset reads the sample exactly like the full data, so the tests, the overfit
-check and short pretraining runs work on it.
+subset of the rows of human-sequences.bed (per split). HG38Dataset reads 2^20 = 1,048,576 bases
+from each row's start (MAX_ALLOWED_LENGTH, cut into 1,024 windows of 1,024 bases), so each chosen
+region of that length is written as its own FASTA record named <chr>_<start>, with a matching
+BED row relative to the record. HG38Dataset then reads the sample exactly like the full data.
 
   python scripts_charna/make_hg38_sample.py --fasta data/hg38/hg38.ml.fa --bed data/hg38/human-sequences.bed \
       --out charna_project/datasets/hg38_sample
@@ -16,7 +16,8 @@ import random
 
 from pyfaidx import Fasta
 
-COUNTS = {"train": 24, "valid": 4, "test": 4}
+COUNTS = {"train": 6, "valid": 1, "test": 1}
+REGION = 2 ** 20  # = MAX_ALLOWED_LENGTH in src/dataloaders/datasets/hg38_dataset.py
 
 
 def main():
@@ -38,9 +39,9 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     genome = Fasta(args.fasta)
     with open(out / "hg38_sample.fa", "w") as fa, open(out / "human-sequences_sample.bed", "w") as bed:
-        for chrom, start, end, split in chosen:
-            name = f"{chrom}_{start}_{end}"
-            seq = str(genome[chrom][int(start):int(end)])
+        for chrom, start, _, split in chosen:
+            name = f"{chrom}_{start}"
+            seq = str(genome[chrom][int(start):int(start) + REGION])  # shorter only at a chromosome end
             fa.write(f">{name}\n")
             for i in range(0, len(seq), 60):
                 fa.write(seq[i:i + 60] + "\n")

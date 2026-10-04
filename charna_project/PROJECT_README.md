@@ -15,6 +15,7 @@ results are directly comparable with the Bio-xLSTM paper.
 | Results of the runs | [`charna_project/results/`](results/) |
 | Data (interval list, hg38 sample, download script) | [`charna_project/datasets/`](datasets/), [`scripts_charna/download_data.sh`](../scripts_charna/download_data.sh) |
 | Model code (GBST + encoder) | [`models/charna/`](../models/charna/) |
+| Beginner's explanation of the whole project | [`docs/EXPLAINED.md`](../docs/EXPLAINED.md) |
 | Original DNA-xLSTM README (installation, data, other models) | [`README_DNA_XLSTM.md`](../README_DNA_XLSTM.md) |
 
 Papers used (all hyperparameters below cite one of them):
@@ -208,8 +209,8 @@ All commands from the repository root unless stated otherwise.
 bash scripts_charna/download_data.sh   # full hg38 (3.1 GB) into data/hg38/ + md5 check, NT tasks into the HF cache
 ```
 
-The full genome is too large for GitHub (files over 100 MB are refused). A 4.3 MB sample of 32 real
-hg38 intervals is in `charna_project/datasets/hg38_sample/`; it works with every command below
+The full genome is too large for GitHub (files over 100 MB are refused). A 7.9 MB sample of 8 real
+hg38 regions (6 train, 1 valid, 1 test) is in `charna_project/datasets/hg38_sample/`; it works with every command below
 in place of `data/hg38/...` (set `HG38_FASTA` / `HG38_BED` for the tests, or `dataset.fasta_file`
 / `dataset.bed_file` for training), but is only meant for trying the code.
 
@@ -249,6 +250,17 @@ python ../scripts_charna/summarize_nt.py ../outputs/downstream/nt_cv10_ep20 --ma
 ```
 
 Finished runs are skipped when the script is restarted.
+
+**Loss plot** (needs matplotlib, e.g. on your own computer)
+
+```bash
+python scripts_charna/plot_metrics.py \
+  charna_project/results/pretrain/hg38/smoke_charna/metrics.csv:GBST-BERT \
+  charna_project/results/pretrain/hg38/smoke_llama/metrics.csv:Transformer++ --out val_loss.png
+```
+
+A step-by-step explanation of the whole project for beginners is in
+[docs/EXPLAINED.md](../docs/EXPLAINED.md).
 
 ## Small experiment (0.5B tokens, 4 NT tasks)
 
