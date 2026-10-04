@@ -15,14 +15,21 @@ find "${OUT}" -mindepth 1 -maxdepth 1 ! -name README.md ! -name datasets ! -name
   -exec rm -rf {} + 2>/dev/null || true
 mkdir -p "${OUT}"
 
-git diff --name-only --diff-filter=AM "${BASE}" HEAD -- . ":(exclude)${OUT}" ":(exclude)README.md" |
+git diff --name-only --diff-filter=AM "${BASE}" HEAD -- . ":(exclude)${OUT}" ":(exclude)README.md" ":(exclude)README_DNA_XLSTM.md" |
   while read -r f; do
     mkdir -p "${OUT}/$(dirname "$f")"
     cp "$f" "${OUT}/$f"
   done
 
-# Exact edits to files that already existed upstream (README.md pointer included).
-git diff "${BASE}" HEAD --diff-filter=M -- . ":(exclude)${OUT}" > "${OUT}/changes_to_existing_files.patch"
+# The project documentation (the repository's main README.md) as a copy in the folder.
+# Relative links are rewritten for the new location (charna_project/x -> x, other paths -> ../x).
+sed -e 's#](charna_project/#](#g' -e 's#](\([A-Za-z0-9_][A-Za-z0-9_.-]*[/.]\)#](../\1#g' \
+  README.md > "${OUT}/PROJECT_README.md"
+
+# Exact edits to code files that already existed upstream (README files excluded: the main
+# README.md was replaced by the project documentation, the original is README_DNA_XLSTM.md).
+git diff "${BASE}" HEAD --diff-filter=M -- . ":(exclude)${OUT}" ":(exclude)README.md" \
+  > "${OUT}/changes_to_existing_files.patch"
 
 echo "upstream base: ${BASE}"
 find "${OUT}" -type f | sort
