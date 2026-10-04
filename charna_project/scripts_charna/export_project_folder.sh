@@ -2,8 +2,8 @@
 # Rebuild charna_project/: copies of every file this project added or changed relative to the
 # upstream DNA-xLSTM code (origin/main), in their repo sub-paths, plus a patch of the changes
 # to existing upstream files. The copies are for browsing/downloading in one place; the working
-# code is the original files in the repo. charna_project/datasets/ (data) and
-# charna_project/results/ (run results) and charna_project/runs/ (run pages) are not touched. Run from the repo root after committing changes:
+# code is the original files in the repo. charna_project/datasets/ (data), results/ (run
+# results) and runs/ (run pages) are not touched. Run from the repo root after committing changes:
 #   bash scripts_charna/export_project_folder.sh
 
 set -euo pipefail
