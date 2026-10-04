@@ -21,6 +21,7 @@ from models import CaduceusConfig, Caduceus
 from models import xLSTMConfig, xLSTMLMHeadModel
 from models.charna import CharnaConfig, CharnaForMaskedLM
 from models.charna.modeling_charna import conjoined_hidden_states
+from models.llama.modelling_llama import TransformerConfig, TransformerLMHeadModel
 
 from src.models.sequence.long_conv_lm import LMBackbone
 from src.models.sequence.long_conv_lm import _init_weights
@@ -319,8 +320,10 @@ class DNAEmbeddingModelxLSTM(DNAEmbeddingModel):
 class DNAEmbeddingModelCharna(DNAEmbeddingModel):
     """GBST + BERT backbone for downstream tasks.
 
-    Wraps the full pretraining model so state-dict keys match the pretrained checkpoint under
-    `load_backbone` (backbone.backbone.* is loaded, backbone.lm_head.* is re-initialised).
+    Wraps the pretraining model so state-dict keys match the pretrained checkpoint under
+    `load_backbone` (pretrained backbone.* -> backbone.backbone.*). The MLM-only modules
+    (lm_head, and upsample_norm when downsample_rate > 1) are removed: headless_forward does not
+    use them, and load_backbone cannot map their top-level checkpoint keys.
     """
 
     def __init__(
@@ -335,6 +338,9 @@ class DNAEmbeddingModelCharna(DNAEmbeddingModel):
         self.config = config
         self.d_model = config.d_model  # for decoder
         self.backbone = CharnaForMaskedLM(config, device=device)
+        del self.backbone.lm_head
+        if hasattr(self.backbone, "upsample_norm"):
+            del self.backbone.upsample_norm
         self.conjoin_train = conjoin_train
         self.conjoin_test = conjoin_test
 
@@ -342,3 +348,42 @@ class DNAEmbeddingModelCharna(DNAEmbeddingModel):
         if self.conjoin_train or (self.conjoin_test and not self.training):  # post-hoc conjoining (PH)
             return conjoined_hidden_states(self.backbone.headless_forward, input_ids), None
         return self.backbone.headless_forward(input_ids), None
+
+
+class DNAEmbeddingModelTransformer(DNAEmbeddingModel):
+    """Transformer++ (models/llama) backbone for downstream tasks.
+
+    The repo has no downstream wrapper for this model (Bio-xLSTM reports no NT results for it);
+    this one is used for the same-hardware Transformer++-2M baseline. Wraps the pretraining model
+    so `load_backbone` maps backbone.* -> backbone.backbone.*; hidden states are taken after the
+    final norm, without the (weight-tied) output projection.
+    """
+
+    def __init__(
+            self,
+            config: TransformerConfig,
+            conjoin_train=False,
+            conjoin_test=False,
+            device=None,
+            dtype=None,
+    ):
+        super(DNAEmbeddingModel, self).__init__()
+        self.config = config
+        self.d_model = config.dim  # for decoder
+        self.backbone = TransformerLMHeadModel(config, device=device)
+        self.conjoin_train = conjoin_train
+        self.conjoin_test = conjoin_test
+
+    def headless_forward(self, input_ids):
+        model = self.backbone.backbone
+        seqlen = input_ids.shape[1]
+        h = model.dropout(model.tok_embeddings(input_ids))
+        freqs_cos, freqs_sin = model.freqs_cos[:seqlen], model.freqs_sin[:seqlen]
+        for layer in model.layers:
+            h = layer(h, freqs_cos, freqs_sin)
+        return model.norm(h)
+
+    def forward(self, input_ids, position_ids=None, inference_params=None, state=None):  # state for the repo interface
+        if self.conjoin_train or (self.conjoin_test and not self.training):  # post-hoc conjoining (PH)
+            return conjoined_hidden_states(self.headless_forward, input_ids), None
+        return self.headless_forward(input_ids), None

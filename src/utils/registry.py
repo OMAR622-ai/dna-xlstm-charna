@@ -37,6 +37,7 @@ model = {
     "dna_embedding_xlstm": "src.models.sequence.dna_embedding.DNAEmbeddingModelxLSTM",
     "dna_embedding_caduceus": "src.models.sequence.dna_embedding.DNAEmbeddingModelCaduceus",
     "dna_embedding_charna": "src.models.sequence.dna_embedding.DNAEmbeddingModelCharna",
+    "dna_embedding_llama": "src.models.sequence.dna_embedding.DNAEmbeddingModelTransformer",
 
     # Baseline for genomics benchmark
     "genomics_benchmark_cnn": "src.models.baseline.genomics_benchmark_cnn.GenomicsBenchmarkCNN",
