@@ -1,0 +1,18 @@
+{
+    "config": {
+        "_target_": "models.llama.modelling_llama.TransformerConfig",
+        "d_model": 256,
+        "n_layer": 4,
+        "bidirectional": false,
+        "max_length": 1024,
+        "vocab_size": 12,
+        "n_heads": 16,
+        "n_kv_heads": 16,
+        "hidden_dim": null,
+        "multiple_of": 8,
+        "norm_eps": 1e-05,
+        "dropout": 0.0
+    },
+    "config_path": "/system/user/omohamed/charna/dna-xlstm/outputs/pretrain/hg38/smoke_llama/model_config.json",
+    "conjoin_test": true
+}

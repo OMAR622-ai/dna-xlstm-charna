@@ -12,6 +12,9 @@ The full project documentation is the repository's main [README.md](../README.md
 - **Data** (`datasets/`): kept only here.
 - **Results** (`results/`): kept only here, copied from the server's `outputs/` with
   `bash scripts_charna/collect_results.sh`.
+- **Runs** (`runs/`): one page per run (purpose, exact command, settings read from the run's
+  config, results, files) and a log of every project step; see [runs/README.md](runs/README.md).
+  Generated from `runs/runs.yaml` and `results/` by `python scripts_charna/make_run_cards.py`.
 
 ## Data
 
@@ -41,7 +44,9 @@ python -m unittest tests.test_charna -v
 |---|---|
 | `results/smoke/summary.txt`, `results/pretrain/hg38/smoke_*/metrics.csv` | Smoke run (48 steps, ≈50M tokens) of both models |
 | `results/small/`, `results/pretrain/hg38/small_*_500/`, `results/downstream/nt_small/` | Small experiment (500 steps, ≈0.5B tokens, then 4 NT tasks); see the main README, "Small experiment" |
-| `results/pretrain/hg38/stopped_*`, `results/full/stopped*/` | Configurations of the two full runs that were stopped (no metrics yet when stopped) |
+| `results/pretrain/hg38/stopped_*`, `results/full/stopped*/` | Configurations of the two full runs that were stopped (no validation point yet when stopped) |
+| `results/nt_smoke_cpu/` | The CPU test of the NT benchmark pipeline (run R05; numbers carry no information) |
+| `results/*/*/config.json`, `train.log` | Full resolved settings and main log of every training run |
 
 Each `metrics.csv` has one row per validation: `global_step`, `tokens` seen, and the validation and
 test losses (pretraining) or metrics (NT fine-tuning).
@@ -67,6 +72,7 @@ test losses (pretraining) or metrics (NT fine-tuning).
 | `scripts_charna/summarize_nt.py` | NT results table |
 | `scripts_charna/download_data.sh`, `make_hg38_sample.py` | Full data download and check; builds the sample |
 | `scripts_charna/collect_results.sh` | Copies run results into `results/` |
+| `scripts_charna/make_run_cards.py` | Writes the run pages in `runs/` |
 | `scripts_charna/overfit_one_batch.py`, `scripts_charna/smoke_run.sh` | Sanity checks |
 | `scripts_charna/export_project_folder.sh` | Rebuilds the code copies in this folder |
 | `tests/` | Unit tests (`python -m unittest tests.test_charna tests.test_downstream -v` from the repo root) |

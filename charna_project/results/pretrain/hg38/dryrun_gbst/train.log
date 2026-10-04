@@ -1,0 +1,36 @@
+[2026-10-04 13:11:07,503][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.LearningRateMonitor>
+[2026-10-04 13:11:07,504][__main__][INFO] - Instantiating callback <src.callbacks.timer.Timer>
+[2026-10-04 13:11:07,519][__main__][INFO] - Instantiating callback <src.callbacks.params.ParamsLog>
+[2026-10-04 13:11:07,528][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-04 13:11:07,529][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-04 13:11:07,531][__main__][INFO] - Instantiating trainer <pytorch_lightning.Trainer>
+[2026-10-04 13:11:07,645][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
+[2026-10-04 13:12:04,446][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.LearningRateMonitor>
+[2026-10-04 13:12:04,447][__main__][INFO] - Instantiating callback <src.callbacks.timer.Timer>
+[2026-10-04 13:12:04,454][__main__][INFO] - Instantiating callback <src.callbacks.params.ParamsLog>
+[2026-10-04 13:12:04,458][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-04 13:12:04,459][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-04 13:12:04,460][__main__][INFO] - Instantiating trainer <pytorch_lightning.Trainer>
+[2026-10-04 13:12:04,563][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
+[2026-10-04 13:12:36,688][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.LearningRateMonitor>
+[2026-10-04 13:12:36,689][__main__][INFO] - Instantiating callback <src.callbacks.timer.Timer>
+[2026-10-04 13:12:36,693][__main__][INFO] - Instantiating callback <src.callbacks.params.ParamsLog>
+[2026-10-04 13:12:36,695][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-04 13:12:36,696][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-04 13:12:36,697][__main__][INFO] - Instantiating trainer <pytorch_lightning.Trainer>
+[2026-10-04 13:12:36,801][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
+[2026-10-04 13:12:36,924][__main__][INFO] - config.train.ckpt='checkpoints/test/loss.ckpt' fsspec_exists(config.train.ckpt)=False
+[2026-10-04 13:23:46,958][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.LearningRateMonitor>
+[2026-10-04 13:23:46,959][__main__][INFO] - Instantiating callback <src.callbacks.timer.Timer>
+[2026-10-04 13:23:46,963][__main__][INFO] - Instantiating callback <src.callbacks.params.ParamsLog>
+[2026-10-04 13:23:46,965][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-04 13:23:46,966][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-04 13:23:46,967][__main__][INFO] - Instantiating trainer <pytorch_lightning.Trainer>
+[2026-10-04 13:23:47,072][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
+[2026-10-04 13:23:47,193][__main__][INFO] - config.train.ckpt='checkpoints/test/loss.ckpt' fsspec_exists(config.train.ckpt)=False
+[2026-10-04 13:24:06,458][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
+[2026-10-04 13:24:06,581][__main__][INFO] - Optimizer group 0 | 31 tensors | weight_decay 0.1
+[2026-10-04 13:24:06,581][__main__][INFO] - Optimizer group 1 | 19 tensors | weight_decay 0.0
+[2026-10-04 13:24:12,678][__main__][INFO] - Creating validation loaders
+[2026-10-04 13:24:12,678][__main__][INFO] - ['val', 'test']
+[2026-10-04 13:24:14,535][__main__][INFO] - Creating train loader

@@ -1,0 +1,226 @@
+# Register of every run of the project (training runs, checks, evaluations), in order.
+# Hand-written facts (purpose, command, status, outcome); settings and results are read from the
+# files in charna_project/results/ by scripts_charna/make_run_cards.py, which writes one page per
+# run (charna_project/runs/<id>.md) and the index (charna_project/runs/README.md).
+# Times are CEST (server clock). Paths in `results` are relative to charna_project/results/.
+
+runs:
+  - id: R01_overfit_v1
+    title: Overfit one batch (first GBST version)
+    kind: check
+    status: done
+    started: "2026-10-04, before 13:16"
+    model: GBST-BERT, first version (no pointwise layer)
+    purpose: Check that the model can learn at all, by memorising one fixed masked batch of hg38.
+    command: python scripts_charna/overfit_one_batch.py --fasta data/hg38/hg38.ml.fa --bed data/hg38/human-sequences.bed --strategy {mlm,ul2}
+    outcome: "Passed: loss < 0.05 after 158 steps (MLM) and 229 steps (UL2), on one GPU. A first attempt on the CPU was too slow (about 9 s per step) and was stopped."
+    notes: Printed to the terminal only; no result files.
+
+  - id: R02_dryrun_gbst
+    title: 3-step trial on 4 GPUs
+    kind: check
+    status: done
+    started: "2026-10-04 13:11"
+    ended: "2026-10-04 13:24"
+    model: GBST-BERT, first version
+    purpose: Check that training, validation and checkpointing work end to end with 4 GPUs (DDP).
+    command: MAX_STEPS=3 ... bash scripts_pretrain/run_pretrain_charna.sh (3 steps)
+    results: [pretrain/hg38/dryrun_gbst]
+    outcome: "Passed: trained, validated (val loss 1.68, test loss 1.69), saved a checkpoint, exited 0. Measured speed: about 0.9 s per micro-batch."
+    notes: Several launcher problems were found and fixed before this worked (placeholder packages, DDP processes, validation interval).
+
+  - id: R03_smoke_charna
+    title: Smoke run, GBST-BERT (48 steps)
+    kind: pretraining
+    status: done
+    started: "2026-10-04 13:26"
+    ended: "2026-10-04 13:42"
+    model: GBST-BERT, first version (no pointwise layer), LR 1e-2
+    purpose: Short trial of the full pipeline (≈50 M bases) to measure speed and memory and to see that the loss falls.
+    command: cd scripts_pretrain && bash ../scripts_charna/smoke_run.sh   (MAX_STEPS=48 VAL_EVERY=12 LIMIT_VAL=64)
+    results: [pretrain/hg38/smoke_charna, smoke]
+    outcome: "Done in 930 s, peak GPU memory 3,388 MiB. Validation loss 1.392 → 1.364. Learning-rate schedule compressed to 48 steps."
+    notes: Superseded model version and learning rate; a check, not a result.
+
+  - id: R04_smoke_llama
+    title: Smoke run, Transformer++ (48 steps)
+    kind: pretraining
+    status: done
+    started: "2026-10-04 13:42"
+    ended: "2026-10-04 13:57"
+    model: Transformer++-2M, LR 1e-2
+    purpose: Same smoke run for the comparison model.
+    command: (second half of scripts_charna/smoke_run.sh, MODEL=llama)
+    results: [pretrain/hg38/smoke_llama, smoke]
+    outcome: "Done in 894 s, peak GPU memory 1,200 MiB (uses gradient checkpointing). Validation loss 1.397 → 1.325."
+
+  - id: R05_nt_smoke_cpu
+    title: NT benchmark pipeline test on the CPU
+    kind: fine-tuning test
+    status: done
+    started: "2026-10-04 ≈14:20"
+    ended: "2026-10-04 14:37"
+    model: R03 and R04 checkpoints
+    purpose: Check that fine-tuning on a Nucleotide Transformer task runs end to end (loading weights, training, best-checkpoint test, reverse-complement averaging, results table).
+    command: PRETRAIN_DIR=... MODEL={charna,llama} TASKS=promoter_tata LRS=1e-3 BATCH_SIZES=64 SEEDS="1 2" EPOCHS=2 bash scripts_downstream/run_nucleotide_charna.sh trainer.accelerator=cpu trainer.limit_train_batches=15 trainer.limit_val_batches=5
+    results: [nt_smoke_cpu]
+    outcome: "Pipeline works for both models (exit 0). Test F1 0.679 for all runs = always predicting the positive class after 15 batches: the numbers carry no information."
+    notes: "Found and fixed two bugs on the way: GBST checkpoints could not be loaded for fine-tuning; the NT data loader mixed all 18 tasks (fix applied in a test copy first, committed 15:24)."
+
+  - id: R06_full_v1_stopped
+    title: Full pretraining attempt 1 (stopped)
+    kind: pretraining
+    status: stopped
+    started: "2026-10-04 13:59"
+    ended: "2026-10-04 ≈15:10 (stopped)"
+    model: GBST-BERT, first version (no pointwise layer), LR 1e-2
+    purpose: The planned 10,000-step (10.5 B bases) run.
+    command: MODEL=charna RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh
+    results: [pretrain/hg38/stopped_charna_nopointwise_lr1e-2, full/stopped]
+    outcome: "Stopped after 1 h 10 min (≈ step 320 of 10,000, training loss ≈1.2) because the model was changed to match the ChaRNABERT paper exactly (pointwise layer) and the learning rate was changed to 5e-4. No validation point had been reached."
+
+  - id: R07_overfit_v2
+    title: Overfit one batch (paper-exact GBST)
+    kind: check
+    status: done
+    started: "2026-10-04 ≈15:05"
+    model: GBST-BERT, final version (with pointwise layer)
+    purpose: Repeat the learning check for the changed model.
+    command: python scripts_charna/overfit_one_batch.py --fasta data/hg38/hg38.ml.fa --bed data/hg38/human-sequences.bed --strategy {mlm,ul2}
+    outcome: "Passed: loss < 0.05 after 164 steps (MLM) and 230 steps (UL2), on one GPU."
+    notes: Printed to the terminal only; no result files.
+
+  - id: R08_full_v2_stopped
+    title: Full pretraining attempt 2 (stopped)
+    kind: pretraining
+    status: stopped
+    started: "2026-10-04 15:10"
+    ended: "2026-10-04 ≈16:18 (stopped)"
+    model: GBST-BERT, final version, LR 5e-4
+    purpose: The planned 10,000-step run with the final settings.
+    command: MODEL=charna RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh
+    results: [pretrain/hg38/stopped_charna_pointwise_lr5e-4, full/stopped2]
+    outcome: "Stopped after 1 h 8 min (≈ step 200, training loss ≈1.36) to run the small experiment first and see results sooner (decided together). No validation point had been reached."
+
+  - id: R09_small_charna
+    title: Small experiment, GBST-BERT (500 steps)
+    kind: pretraining
+    status: done
+    started: "2026-10-04 16:20"
+    ended: "2026-10-04 19:55"
+    model: GBST-BERT, final version, LR 5e-4
+    purpose: Pretrain on ≈0.5 B bases (5% of the full run) to get early results.
+    command: MODEL=charna RUN_NAME=small_charna_500 MAX_STEPS=500 VAL_EVERY=100 LIMIT_VAL=0.02 CKPT_EVERY=100 bash scripts_pretrain/run_pretrain_charna.sh
+    results: [pretrain/hg38/small_charna_500, small]
+    outcome: "Validation loss 1.340 → 1.194 (test 1.196). Finished normally (the queue script was replaced while it ran, so its exit status was not logged; all 5 validation points and the final checkpoint exist)."
+
+  - id: R10_small_llama
+    title: Small experiment, Transformer++ (500 steps)
+    kind: pretraining
+    status: done
+    started: "2026-10-04 19:55"
+    ended: "2026-10-04 22:02"
+    model: Transformer++-2M, LR 1e-2
+    purpose: Same 500-step pretraining for the comparison model.
+    command: MODEL=llama RUN_NAME=small_llama_500 MAX_STEPS=500 VAL_EVERY=100 LIMIT_VAL=0.02 CKPT_EVERY=100 bash scripts_pretrain/run_pretrain_charna.sh
+    results: [pretrain/hg38/small_llama_500, small]
+    outcome: "Validation loss 1.263 → 1.196 (test 1.196). Exit 0."
+
+  - id: R11_eval_smoke
+    title: Accuracy script test on the smoke models
+    kind: evaluation
+    status: done
+    started: "2026-10-04 ≈17:45"
+    model: R03 and R04 checkpoints
+    purpose: Test scripts_charna/evaluate_mlm.py (64 test sequences, CPU).
+    command: python scripts_charna/evaluate_mlm.py outputs/pretrain/hg38/smoke_charna:GBST-BERT-smoke outputs/pretrain/hg38/smoke_llama:Transformer++-smoke --n_seqs 64 --batch 16 --device cpu
+    outcome: "Script works. Smoke GBST-BERT 29.1% accuracy = always answering A (the most common hidden base, 29.1%); smoke Transformer++ 32.8%. Showed that accuracy must be compared with the majority-base reference."
+    notes: Printed to the terminal only; numbers are in the README and the report.
+
+  - id: R12_eval_small
+    title: Accuracy of the small-experiment models
+    kind: evaluation
+    status: done
+    started: "2026-10-04 22:02"
+    ended: "2026-10-04 22:04"
+    model: R09 and R10 final checkpoints (step 500)
+    purpose: Masked-base accuracy and loss on 2,048 held-out sequences (validation and test splits), same masks for both models.
+    command: python scripts_charna/evaluate_mlm.py outputs/pretrain/hg38/small_charna_500:GBST-BERT outputs/pretrain/hg38/small_llama_500:Transformer++ --split {valid,test} --n_seqs 2048
+    results: [small]
+    outcome: "Test accuracy GBST-BERT 43.94% (loss 1.1944), Transformer++ 43.77% (1.1958); random 25%, always-most-common 29.42%. Difference too small to call a winner."
+
+  - id: R13_lr_1e-3
+    title: Learning-rate check, GBST-BERT LR 1e-3
+    kind: pretraining
+    status: running
+    started: "2026-10-04 22:10"
+    model: GBST-BERT, final version, LR 1e-3
+    purpose: Find a better learning rate than 5e-4 for the full run (chosen by validation loss at step 500).
+    command: MODEL=charna LR=1e-3 RUN_NAME=small_charna_500_lr1e-3 MAX_STEPS=500 VAL_EVERY=100 LIMIT_VAL=0.02 CKPT_EVERY=100 bash scripts_pretrain/run_pretrain_charna.sh   (from ~/charna/run_lr_check.sh)
+    results: [pretrain/hg38/small_charna_500_lr1e-3, lr_check]
+
+  - id: R14_lr_2e-3
+    title: Learning-rate check, GBST-BERT LR 2e-3
+    kind: pretraining
+    status: queued
+    model: GBST-BERT, final version, LR 2e-3
+    purpose: As R13.
+    command: (same as R13 with LR=2e-3)
+    results: [pretrain/hg38/small_charna_500_lr2e-3, lr_check]
+
+  - id: R15_lr_5e-3
+    title: Learning-rate check, GBST-BERT LR 5e-3
+    kind: pretraining
+    status: queued
+    model: GBST-BERT, final version, LR 5e-3
+    purpose: As R13.
+    command: (same as R13 with LR=5e-3)
+    results: [pretrain/hg38/small_charna_500_lr5e-3, lr_check]
+
+  - id: R16_full_charna
+    title: Full pretraining, GBST-BERT (10.5 B bases)
+    kind: pretraining
+    status: queued
+    model: GBST-BERT, final version, best LR of R09/R13–R15 (by validation loss at step 500)
+    purpose: The main run.
+    command: MODEL=charna LR=<best> RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh   (from ~/charna/run_full_after_lr.sh)
+    results: [pretrain/hg38/full_charna_mlm, full]
+
+  - id: R17_full_llama
+    title: Full pretraining, Transformer++ (10.5 B bases)
+    kind: pretraining
+    status: queued
+    model: Transformer++-2M, LR 1e-2
+    purpose: The comparison model at full scale.
+    command: MODEL=llama RUN_NAME=full_llama_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh
+    results: [pretrain/hg38/full_llama_mlm, full]
+
+  - id: R18_eval_full
+    title: Accuracy of the full models
+    kind: evaluation
+    status: queued
+    model: R16 and R17 final checkpoints
+    purpose: Same accuracy test as R12, after full training.
+    command: python scripts_charna/evaluate_mlm.py outputs/pretrain/hg38/full_charna_mlm:GBST-BERT outputs/pretrain/hg38/full_llama_mlm:Transformer++ --split {valid,test} --n_seqs 2048
+    results: [full]
+
+# Steps of the project that are not runs (setup, code, decisions), in order.
+log:
+  - {when: "2026-10-03/04", what: "Read the code base; set up SSH key login to the JKU server student01 (4× GTX 1080 Ti, shared)."}
+  - {when: "2026-10-03", what: "Copied hg38 (3.1 GB) to the server and verified it (md5 c2cc5a203b71fff7fbf750f9276b3e8a); the direct download from ml.jku.at stalled."}
+  - {when: "2026-10-03/04", what: "Built the Python environment (torch 2.2.0 + CUDA 12.1; newer torch has no kernels for the 1080 Ti)."}
+  - {when: "2026-10-03/04", what: "Read the four papers (Bio-xLSTM, ChaRNABERT, Charformer, UL2) and collected every hyperparameter with its source."}
+  - {when: "2026-10-04 12:45", what: "Model, UL2 masking and 16 tests committed (GBST + BERT, 2.04 M parameters)."}
+  - {when: "2026-10-04 13:16–13:33", what: "Launcher for the older GPUs, pretraining script, metrics file, smoke-run script."}
+  - {when: "2026-10-04 13:59", what: "Full pretraining started (R06), after the smoke runs; code pushed to a private GitHub repository."}
+  - {when: "2026-10-04 14:40", what: "Benchmark wrappers and scripts; two bugs fixed (weight loading, results file). Project README written."}
+  - {when: "2026-10-04 15:07", what: "Project scope set to GBST + bidirectional BERT; UL2 removed."}
+  - {when: "2026-10-04 15:13", what: "Decision: follow ChaRNABERT exactly — pointwise layer added (Table 9), UL2 restored as an option (§4.1)."}
+  - {when: "2026-10-04 15:17", what: "Decision: learning rate 5e-4 (ChaRNABERT Table 2); R06 stopped, R08 started."}
+  - {when: "2026-10-04 15:24", what: "Approved fix of the NT data loader committed (it mixed all 18 tasks)."}
+  - {when: "2026-10-04 16:18", what: "Decision: small experiment first; R08 stopped, R09 started."}
+  - {when: "2026-10-04 16:37–17:28", what: "Data (interval list, hg38 sample, download script), project README as front page, beginner's explanation, loss plot script."}
+  - {when: "2026-10-04 17:52", what: "Decision: NT benchmark postponed; accuracy evaluation script added; queue changed to pretraining + evaluation only."}
+  - {when: "2026-10-04 18:28", what: "Progress report (PDF) added."}
+  - {when: "2026-10-04 22:17", what: "Small-experiment results added to README and report."}
+  - {when: "2026-10-04 22:30", what: "Learning-rate check (R13–R15) running; full runs (R16–R18) queued to start automatically after it."}
