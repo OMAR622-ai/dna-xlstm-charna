@@ -4,6 +4,7 @@
 # Protocol from Bio-xLSTM App. C.5 / Tables A3-A4 (same as the repo's Transformer++-2M):
 #   2^20 tokens per step (1024 x 1024), 10,000 steps, AdamW (0.9, 0.95), wd 0.1,
 #   cosine decay with 1,000 warmup steps (10% of max_steps), grad clip 1.0, 15% MLM (80/10/10).
+# Learning rate: ChaRNABERT Table 2 for GBST + BERT, Bio-xLSTM Table A3 for Transformer++ (below).
 # See all model parameters in configs/model/charna.yaml.
 #
 # Every setting below can be overridden from the environment, e.g. for a short smoke run:
@@ -25,7 +26,6 @@ D_MODEL=${D_MODEL:-256}
 N_LAYER=${N_LAYER:-4}
 N_HEADS=${N_HEADS:-8}
 HIDDEN_DIM=${HIDDEN_DIM:-320}      # 1.25:1 up-projection (Bio-xLSTM Table A3)
-LR=${LR:-"1e-2"}                   # chosen value for Transformer++-2M (Table A3)
 TOKENIZER=${TOKENIZER:-"gbst"}     # gbst | embedding
 DOWNSAMPLE=${DOWNSAMPLE:-1}
 MLM_STRATEGY=${MLM_STRATEGY:-"mlm"}  # mlm | ul2 (train split only; validation always uses 15% MLM)
@@ -41,6 +41,10 @@ BATCH_SIZE=$(( 1048576 / SEQLEN ))  # constant number of tokens across context s
 # MODEL=charna (GBST + BERT) or MODEL=llama (the repo's Transformer++, same shape: Bio-xLSTM
 # Table A3) so both run with identical data, schedule and logging.
 MODEL=${MODEL:-charna}
+# Learning rate: each model at its own paper value unless LR is set.
+#   charna: 5e-4, best for the smallest ChaRNABERT model (5M) with GBST and with EM (ChaRNABERT Table 2)
+#   llama:  1e-2, chosen value for DNA-Transformer++-2M (Bio-xLSTM Table A3)
+if [ "${MODEL}" = "charna" ]; then LR=${LR:-"5e-4"}; else LR=${LR:-"1e-2"}; fi
 if [ "${MODEL}" = "charna" ]; then
   MODEL_ARGS=(model=charna model.config.d_model=${D_MODEL} model.config.n_layer=${N_LAYER}
     model.config.n_heads=${N_HEADS} model.config.hidden_dim=${HIDDEN_DIM} model.config.max_length=${SEQLEN}
