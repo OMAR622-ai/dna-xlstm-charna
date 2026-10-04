@@ -32,6 +32,7 @@ class CharnaConfig(PretrainedConfig):
         gbst_offsets: bool = True,  # ChaRNABERT Eq. 3; False = Charformer strided blocks
         gbst_pooling: str = "sum",  # ChaRNABERT Eq. 2; Charformer uses "mean"
         gbst_conv_kernel_size: int = None,  # None = max block size (ChaRNABERT Eq. 1)
+        gbst_pointwise_conv: bool = True,  # d x d projection after the depthwise conv (ChaRNABERT Table 9)
         gbst_score_calibration: bool = True,  # ChaRNABERT Eq. 6
         downsample_rate: int = 1,  # ChaRNABERT removes downsampling; >1 is the Charformer ablation
         gradient_checkpointing: bool = False,
@@ -60,6 +61,7 @@ class CharnaConfig(PretrainedConfig):
         self.gbst_offsets = gbst_offsets
         self.gbst_pooling = gbst_pooling
         self.gbst_conv_kernel_size = gbst_conv_kernel_size
+        self.gbst_pointwise_conv = gbst_pointwise_conv
         self.gbst_score_calibration = gbst_score_calibration
         self.downsample_rate = downsample_rate
         self.gradient_checkpointing = gradient_checkpointing

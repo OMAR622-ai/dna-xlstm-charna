@@ -89,6 +89,7 @@ class CharnaModel(nn.Module):
                 offsets=config.gbst_offsets,
                 pooling=config.gbst_pooling,
                 conv_kernel_size=config.gbst_conv_kernel_size,
+                pointwise_conv=config.gbst_pointwise_conv,
                 score_calibration=config.gbst_score_calibration,
                 downsample_rate=config.downsample_rate,
             )

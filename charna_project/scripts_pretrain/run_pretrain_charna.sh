@@ -28,6 +28,7 @@ HIDDEN_DIM=${HIDDEN_DIM:-320}      # 1.25:1 up-projection (Bio-xLSTM Table A3)
 LR=${LR:-"1e-2"}                   # chosen value for Transformer++-2M (Table A3)
 TOKENIZER=${TOKENIZER:-"gbst"}     # gbst | embedding
 DOWNSAMPLE=${DOWNSAMPLE:-1}
+MLM_STRATEGY=${MLM_STRATEGY:-"mlm"}  # mlm | ul2 (train split only; validation always uses 15% MLM)
 RC_AUG=${RC_AUG:-"true"}           # reverse complement augmentation (PH setting)
 PRECISION=${PRECISION:-32}         # GTX 1080 Ti has no bf16; the paper used bf16 on A100
 MICRO_BATCH=${MICRO_BATCH:-32}     # per-GPU batch; gradient accumulation fills the global batch
@@ -59,7 +60,7 @@ VAL_CHECK_BATCHES=$(( VAL_EVERY * ACCUM ))
 
 SEQLEN_DIS="$(echo "scale=0; ${SEQLEN} / 1000" | bc)k"
 TIMESTAMP=$(date +"%y%m%d%H%M%S")
-WANDB_NAME=${RUN_NAME:-"${MODEL}_${TOKENIZER}-ds${DOWNSAMPLE}_mlm_rcaug-${RC_AUG}_seqlen-${SEQLEN_DIS}_dmodel-${D_MODEL}_nlayer-${N_LAYER}_lr-${LR}_runid-${TIMESTAMP}"}
+WANDB_NAME=${RUN_NAME:-"${MODEL}_${TOKENIZER}-ds${DOWNSAMPLE}_${MLM_STRATEGY}_rcaug-${RC_AUG}_seqlen-${SEQLEN_DIS}_dmodel-${D_MODEL}_nlayer-${N_LAYER}_lr-${LR}_runid-${TIMESTAMP}"}
 HYDRA_RUN_DIR="./outputs/pretrain/hg38/${WANDB_NAME}"
 mkdir -p "${HYDRA_RUN_DIR}"
 
@@ -72,6 +73,7 @@ python scripts_charna/train_charna.py \
   dataset.batch_size=${MICRO_BATCH} \
   dataset.mlm=true \
   dataset.mlm_probability=0.15 \
+  +dataset.mlm_strategy=${MLM_STRATEGY} \
   dataset.rc_aug="${RC_AUG}" \
   "${MODEL_ARGS[@]}" \
   optimizer.lr="${LR}" \
