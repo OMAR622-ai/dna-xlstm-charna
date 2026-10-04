@@ -24,6 +24,11 @@ if HAVE_ENV:
     train_charna.install_placeholders()
     train_charna.ensure_cuda_home()
     sys.path.insert(0, str(REPO))
+    # tests/_shim.py (used by test_charna) registers empty stand-ins for `models` and `src`;
+    # drop them so the real packages are imported here, whatever order the test modules load in.
+    if not hasattr(sys.modules.get("models"), "__file__") or not hasattr(sys.modules.get("src"), "__file__"):
+        for name in [n for n in sys.modules if n.split(".")[0] in ("models", "src")]:
+            del sys.modules[name]
     from models.charna import CharnaConfig, CharnaForMaskedLM  # noqa: E402
     from models.llama.modelling_llama import TransformerConfig, TransformerLMHeadModel  # noqa: E402
     from src.callbacks.metrics_csv import append_row  # noqa: E402

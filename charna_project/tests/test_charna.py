@@ -1,4 +1,4 @@
-"""Unit tests for the GBST + BERT model and UL2 masking.
+"""Unit tests for the GBST + BERT model and MLM masking.
 
 Run from the repo root:  python -m unittest tests.test_charna -v
 Data tests use HG38_FASTA / HG38_BED (default: data/hg38/hg38.ml.fa, human-sequences.bed)
@@ -21,7 +21,6 @@ from models.charna.modeling_charna import (
     conjoined_hidden_states, parameter_breakdown, rc_averaged_logits, reverse_complement_ids,
 )
 from src.dataloaders.utils.mlm import mlm_getitem
-from src.dataloaders.utils.ul2 import UL2_DENOISERS, random_spans_noise_mask, ul2_getitem, ul2_noise_mask
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 HG38_FASTA = pathlib.Path(os.environ.get("HG38_FASTA", REPO / "data/hg38/hg38.ml.fa"))
@@ -131,7 +130,8 @@ class TestModel(unittest.TestCase):
     def test_loss_only_on_masked_positions(self):
         model = CharnaForMaskedLM(small_config()).eval()
         seq = random_dna(1, 128)[0]
-        data, target = ul2_getitem(seq, tokenizer=TOK, generator=torch.Generator().manual_seed(1))
+        torch.manual_seed(1)
+        data, target = mlm_getitem(seq, mlm_probability=0.15, tokenizer=TOK)
         with torch.no_grad():
             logits = model(data[None]).logits[0]
         loss = F.cross_entropy(logits, target, ignore_index=PAD_ID)  # same call as the repo's LM task
@@ -152,39 +152,6 @@ class TestMasking(unittest.TestCase):
         self.assertTrue(torch.equal(data[~masked], seq[~masked]))  # unmasked inputs untouched
         frac_mask_token = (data[masked] == MASK_ID).float().mean().item()
         self.assertAlmostEqual(frac_mask_token, 0.8, delta=0.02)
-
-    def test_random_spans_exact_counts(self):
-        g = torch.Generator().manual_seed(0)
-        for _, mu, r in [d for d in UL2_DENOISERS if d[0] != "S"]:
-            mask = random_spans_noise_mask(1024, r, mu, g)
-            self.assertEqual(int(mask.sum()), round(1024 * r))
-            self.assertFalse(bool(mask[0]))  # T5 convention: starts with a non-noise span
-            n_spans = int((mask[1:] & ~mask[:-1]).sum())
-            self.assertEqual(n_spans, max(round(round(1024 * r) / mu), 1))
-
-    def test_s_denoiser_masks_a_suffix(self):
-        g = torch.Generator().manual_seed(0)
-        lengths = []
-        for _ in range(500):
-            mask = ul2_noise_mask(1024, ("S", None, 0.25), g)
-            k = int(mask.sum())
-            self.assertTrue(1 <= k <= 512)
-            self.assertTrue(bool(mask[-k:].all()) and not bool(mask[:-k].any()))
-            lengths.append(k)
-        self.assertAlmostEqual(sum(lengths) / len(lengths) / 1024, 0.25, delta=0.02)
-
-    def test_ul2_never_leaks_masked_characters(self):
-        """Corrupted input is identical whatever the original bases at masked positions were."""
-        seq = random_dna(1, 1024, seed=3)[0]
-        for seed in range(20):
-            data, target = ul2_getitem(seq, tokenizer=TOK, generator=torch.Generator().manual_seed(seed))
-            masked = target != PAD_ID
-            self.assertTrue(bool((data[masked] == MASK_ID).all()))
-            self.assertTrue(torch.equal(data[~masked], seq[~masked]))
-            altered = seq.clone()
-            altered[masked] = BASE_IDS[(torch.searchsorted(BASE_IDS, seq[masked]) + 1) % 4]
-            data2, _ = ul2_getitem(altered, tokenizer=TOK, generator=torch.Generator().manual_seed(seed))
-            self.assertTrue(torch.equal(data, data2))
 
 
 class TestReverseComplement(unittest.TestCase):
@@ -227,29 +194,16 @@ class TestReverseComplement(unittest.TestCase):
 @unittest.skipUnless(HG38_FASTA.exists() and HG38_BED.exists(), "hg38 files not found")
 class TestHG38Dataset(unittest.TestCase):
 
-    def _dataset(self, strategy):
-        from src.dataloaders.datasets.hg38_dataset import HG38Dataset
-        return HG38Dataset(split="valid", bed_file=HG38_BED, fasta_file=HG38_FASTA, max_length=1024,
-                           mlm=True, mlm_probability=0.15, mlm_strategy=strategy, tokenizer=TOK,
-                           tokenizer_name="char", add_eos=True)
-
     def test_items(self):
-        torch.manual_seed(0)
-        for strategy in ("mlm", "ul2"):
-            ds = self._dataset(strategy)
-            data, target = ds[12345]
-            self.assertEqual(data.shape, (1024,))
-            self.assertEqual(target.shape, (1024,))
-            self.assertTrue(bool(((target == PAD_ID) | (target >= 7)).all()))
-            self.assertFalse(bool((target == TOK._vocab_str_to_int["N"]).any()))  # N is never a target
-            if strategy == "ul2":
-                self.assertTrue(bool((data[target != PAD_ID] == MASK_ID).all()))
-
-    def test_default_strategy_unchanged(self):
         from src.dataloaders.datasets.hg38_dataset import HG38Dataset
+        torch.manual_seed(0)
         ds = HG38Dataset(split="valid", bed_file=HG38_BED, fasta_file=HG38_FASTA, max_length=1024,
-                         mlm=True, tokenizer=TOK, tokenizer_name="char", add_eos=True)
-        self.assertEqual(ds.mlm_strategy, "mlm")
+                         mlm=True, mlm_probability=0.15, tokenizer=TOK, tokenizer_name="char", add_eos=True)
+        data, target = ds[12345]
+        self.assertEqual(data.shape, (1024,))
+        self.assertEqual(target.shape, (1024,))
+        self.assertTrue(bool(((target == PAD_ID) | (target >= 7)).all()))
+        self.assertFalse(bool((target == TOK._vocab_str_to_int["N"]).any()))  # N is never a target
 
 
 if __name__ == "__main__":

@@ -26,7 +26,6 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fasta", required=True)
     ap.add_argument("--bed", required=True)
-    ap.add_argument("--strategy", default="mlm", choices=["mlm", "ul2"])
     ap.add_argument("--batch", type=int, default=4)
     ap.add_argument("--length", type=int, default=512)
     ap.add_argument("--steps", type=int, default=400)
@@ -37,7 +36,7 @@ def main():
     torch.manual_seed(0)
     tok = CaduceusTokenizer(model_max_length=args.length)
     ds = HG38Dataset(split="train", bed_file=args.bed, fasta_file=args.fasta, max_length=args.length,
-                     mlm=True, mlm_probability=0.15, mlm_strategy=args.strategy, tokenizer=tok,
+                     mlm=True, mlm_probability=0.15, tokenizer=tok,
                      tokenizer_name="char", add_eos=True)
     idx = torch.randint(len(ds), (args.batch,)).tolist()
     data, target = map(torch.stack, zip(*[ds[i] for i in idx]))

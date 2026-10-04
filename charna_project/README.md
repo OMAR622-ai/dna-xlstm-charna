@@ -18,9 +18,7 @@ expects it there. The folder is regenerated from the repository with
 | `models/charna/modeling_charna.py` | Bidirectional encoder, MLM head, reverse-complement helpers |
 | `models/charna/configuration_charna.py`, `models/charna/__init__.py` | Model config (2M defaults) |
 | `configs/model/charna.yaml` | Hydra model config |
-| `src/dataloaders/utils/ul2.py` | UL2 mixture-of-denoisers masking |
 | `src/callbacks/metrics_csv.py` | Writes validation/test metrics to CSV |
-| `src/dataloaders/datasets/hg38_dataset.py`, `src/dataloaders/genomics.py` | Changed upstream files: `mlm_strategy` switch (mlm / ul2) |
 | `src/models/sequence/dna_embedding.py` | Changed upstream file: downstream wrappers for GBST + BERT and Transformer++ |
 | `src/utils/registry.py` | Changed upstream file: new registry names |
 | `scripts_pretrain/run_pretrain_charna.sh` | Pretraining on hg38 |
@@ -32,5 +30,5 @@ expects it there. The folder is regenerated from the repository with
 | `tests/` | Unit tests (`python -m unittest tests.test_charna tests.test_downstream -v` from the repo root) |
 | `changes_to_existing_files.patch` | Exact line-by-line changes to the files that already existed in DNA-xLSTM |
 
-For the four changed upstream files, the copies here are the full new versions; the patch shows
+For the changed upstream files (`dna_embedding.py`, `registry.py`, and the main `README.md`, which is only in the patch), the copies here are the full new versions; the patch shows
 only what was changed.
