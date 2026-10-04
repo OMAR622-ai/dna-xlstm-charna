@@ -4,7 +4,9 @@ Follows ChaRNABERT (arXiv 2411.11808) Sec. 3.2, which modifies Charformer's GBST
 (arXiv 2106.12672) Sec. 2.1:
 
   1. character embedding X (L x d)
-  2. depthwise 1D conv with kernel size M                                  (Eq. 1)
+  2. depthwise 1D conv with kernel size M (Eq. 1), followed by a pointwise d x d projection:
+     ChaRNABERT Table 9 counts the GBST convolution as d_model x M + d_model^2 parameters,
+     i.e. a depthwise-separable convolution (Charformer's reference code uses a full Conv1D)
   3. candidate blocks for every size b in 1..M and every offset o in 0..b-1,
      pooled with a non-parametric sum                                      (Eq. 2-3)
   4. linear block scorer F_R: R^d -> R, softmax over all candidates        (Eq. 4-5)
@@ -37,6 +39,7 @@ class GBST(nn.Module):
         conv_kernel_size: int = None,
         score_calibration: bool = True,
         downsample_rate: int = 1,
+        pointwise_conv: bool = True,
     ):
         super().__init__()
         self.max_block_size = max_block_size
@@ -49,6 +52,8 @@ class GBST(nn.Module):
         kernel = conv_kernel_size or max_block_size
         self.conv_pad = ((kernel - 1) // 2, kernel - 1 - (kernel - 1) // 2)  # "same" length
         self.conv = nn.Conv1d(d_model, d_model, kernel, groups=d_model)
+        # pointwise half of the depthwise-separable convolution (ChaRNABERT Table 9: + d_model^2)
+        self.pointwise = nn.Linear(d_model, d_model, bias=False) if pointwise_conv else None
         self.scorer = nn.Linear(d_model, 1, bias=False)
 
         # (block size, offset) pairs; with offsets the offset is fixed per candidate,
@@ -78,6 +83,8 @@ class GBST(nn.Module):
         x = self.embedding(input_ids)  # B L d
         length = x.size(1)
         x = self.conv(F.pad(x.transpose(1, 2), self.conv_pad)).transpose(1, 2)
+        if self.pointwise is not None:
+            x = self.pointwise(x)
 
         prefix = F.pad(x.cumsum(dim=1), (0, 0, 1, 0))  # B (L+1) d, prefix[:, j] = sum x[:, :j]
         prefix_scores = self.scorer(prefix).squeeze(-1)  # scorer is linear, so scores also telescope

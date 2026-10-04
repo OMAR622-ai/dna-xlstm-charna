@@ -19,6 +19,7 @@ config:
   gbst_offsets: true
   gbst_pooling: sum          # sum | mean
   gbst_conv_kernel_size: null
+  gbst_pointwise_conv: true  # depthwise-separable conv (ChaRNABERT Table 9: d*M + d^2 params)
   gbst_score_calibration: true
   downsample_rate: 1
   gradient_checkpointing: false

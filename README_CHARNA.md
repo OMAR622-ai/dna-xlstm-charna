@@ -2,7 +2,8 @@
 
 This branch (`charna-gbst`) adds a ChaRNABERT-style model to the DNA-xLSTM code base: a
 **Gradient-Based Subword Tokenizer (GBST)** in front of a **bidirectional BERT-style Transformer
-encoder**, trained with masked language modelling (MLM). It is pretrained on hg38 with the short-context
+encoder**, built as described in ChaRNABERT §3 and trained with masked language modelling (MLM)
+or, optionally, UL2 masking (ChaRNABERT §4.1). It is pretrained on hg38 with the short-context
 DNA-xLSTM protocol and evaluated on the 18-task **Nucleotide Transformer (NT) benchmark**, so the
 results are directly comparable with the Bio-xLSTM paper.
 
@@ -11,29 +12,29 @@ Papers used (all hyperparameters below cite one of them):
 | Short name | Paper |
 |---|---|
 | Bio-xLSTM | Schmidinger et al., *Bio-xLSTM: Generative modeling, representation and in-context learning of biological and chemical sequences*, arXiv:2411.04165 |
-| ChaRNABERT | *ChaRNABERT*, arXiv:2411.11808 |
+| ChaRNABERT | Morales-Pastor et al., *Character-level Tokenizations as Powerful Inductive Biases for RNA Foundational Models*, arXiv:2411.11808 |
 | Charformer | Tay et al., *Charformer: Fast Character Transformers via Gradient-based Subword Tokenization*, arXiv:2106.12672 |
+| UL2 | Tay et al., *UL2: Unifying Language Learning Paradigms*, arXiv:2205.05131 |
 
 ## Status (4 October 2026)
 
 | Step | State |
 |---|---|
-| Model, configs, tests | done, 18 unit tests pass |
-| Overfit one batch | done: MLM loss < 0.05 after 158 steps |
+| Model, UL2, configs, tests | done, 23 unit tests pass |
+| Overfit one batch | done: loss < 0.05 after 164 steps (MLM) and 230 steps (UL2) |
 | Smoke run (50M tokens, both models) | done, see [Smoke run](#smoke-run-50m-tokens) |
-| Full pretraining, GBST + BERT (10.5B tokens) | **running** (started 4 Oct 2026, ~40 h) |
+| Full pretraining, GBST + BERT (10.5B tokens) | **running** (started 4 Oct 2026, ~40 h), but with the earlier GBST version without the pointwise projection (`gbst_pointwise_conv=false`); restart pending |
 | Full pretraining, Transformer++-2M baseline | queued after GBST + BERT |
 | NT benchmark | pipeline ready and tested end to end; waits for pretrained checkpoints |
-| Ablations (d_s, RC aug, GBST vs embedding) | not started |
+| Ablations (d_s, MLM vs UL2, RC aug, GBST vs embedding) | not started |
 
 No final results are reported yet. Numbers in this file are from smoke runs only and are
 labelled as such.
 
 ## What was added
 
-All changes are additive: existing models and default behaviour are unchanged. The only
-existing files that were edited are `src/models/sequence/dna_embedding.py` and
-`src/utils/registry.py` (new classes and registry names) and `README.md` (a link to this file).
+All changes are additive: existing models and default behaviour are unchanged
+(`mlm_strategy` defaults to `"mlm"`, new registry names only).
 
 | File | Purpose |
 |---|---|
@@ -41,6 +42,8 @@ existing files that were edited are `src/models/sequence/dna_embedding.py` and
 | `models/charna/modeling_charna.py` | Encoder (RoPE, SwiGLU, QKNorm, LayerNorm), MLM head, reverse-complement helpers |
 | `models/charna/configuration_charna.py` | `CharnaConfig` (defaults = 2M model) |
 | `configs/model/charna.yaml` | Hydra model config (`model=charna`) |
+| `src/dataloaders/utils/ul2.py` | UL2 masking (ChaRNABERT §4.1) adapted to in-place `[MASK]` |
+| `src/dataloaders/datasets/hg38_dataset.py`, `src/dataloaders/genomics.py` | `mlm_strategy: mlm \| ul2` switch (train split only) |
 | `src/models/sequence/dna_embedding.py` | Downstream wrappers `DNAEmbeddingModelCharna` and `DNAEmbeddingModelTransformer` |
 | `src/utils/registry.py` | `charna_lm`, `dna_embedding_charna`, `dna_embedding_llama`, `metrics_csv` |
 | `src/callbacks/metrics_csv.py` | Writes validation/test metrics to `metrics.csv` (wandb is off on our server) |
@@ -56,7 +59,10 @@ existing files that were edited are `src/models/sequence/dna_embedding.py` and
 
 **GBST** (ChaRNABERT §3.2, Eq. 1–7; Charformer §2):
 
-1. Character embedding, then a depthwise 1D convolution with kernel size M.
+1. Character embedding, then a depthwise 1D convolution with kernel size M (Eq. 1) followed by
+   a pointwise d × d projection. Eq. 1 names only the depthwise convolution, but Table 9 counts
+   the GBST convolution as d_model × M + d_model² parameters, which is a depthwise-separable
+   convolution; we follow the table (`gbst_pointwise_conv=true`).
 2. For every position *i*, candidate blocks of size *b* = 1..M with all offsets (the blocks of
    size *b* that contain *i*), each represented by sum pooling: K = M(M+1)/2 candidates.
 3. A linear scorer (no bias) gives one score per candidate; softmax over the K candidates.
@@ -71,7 +77,9 @@ LayerNorm, bidirectional attention (PyTorch SDPA), MLM head without bias.
 
 **Size**: the shape of Bio-xLSTM's DNA-Transformer++-2M (Table A3): d_model 256, 4 blocks,
 8 heads, up-projection 1.25:1 (SwiGLU hidden size 320), no norm/linear biases. Parameter count
-2,041,856 (Transformer++-2M with the same shape: 2,036,992); the difference is the GBST.
+2,107,392 (Transformer++-2M with the same shape: 2,036,992, 3.5% fewer); the difference is the
+GBST (70,144 parameters). The ChaRNABERT sizes (8M to 650M, Table 1) are for RNA; the project
+uses the 2M size so that results compare with DNA-xLSTM-2M.
 
 | GBST setting | Value | Source |
 |---|---|---|
@@ -79,8 +87,23 @@ LayerNorm, bidirectional attention (PyTorch SDPA), MLM head without bias.
 | Offsets | on | ChaRNABERT §3.2 (Eq. 3 uses offsets o) |
 | Block pooling | sum | ChaRNABERT §3.2 |
 | Conv kernel size | M | ChaRNABERT §3.2 ("convolution of kernel size equal to the maximum block size") |
+| Pointwise d × d after the depthwise conv | on | ChaRNABERT Table 9 (d_model × M + d_model²) |
 | Score calibration | on | ChaRNABERT Eq. 6 |
 | Downsampling d_s | 1 | ChaRNABERT §3.2 (downsampling removed) |
+
+**Paper vs. this implementation.** Everything in ChaRNABERT §3 is implemented as written, with
+these exceptions:
+
+| ChaRNABERT | Here | Why |
+|---|---|---|
+| FlashAttention 2 (§3.3) | PyTorch scaled-dot-product attention | FlashAttention 2 needs Ampere GPUs; ours are GTX 1080 Ti. The attention computed is the same |
+| bf16, DeepSpeed ZeRO (§4.3) | fp32, Lightning DDP | no bf16 on GTX 1080 Ti |
+| Eq. 3 offsets written as X[i+o : i+o+b] | blocks that contain position i, X[i−o : i−o+b] | the literal index gives position i blocks that do not contain it; the text ("starting from position 0 and position 1", reading frames) describes shifted segmentations, which is what we implement (see `models/charna/gbst.py`) |
+| Eq. 9 written as σ(xW₁) ⊙ swish(xW₂) | standard SwiGLU, swish(xW₁) ⊙ xW₂ | the text cites SwiGLU (Shazeer, 2020), which is the standard form; Eq. 9 as printed is a different function |
+| Max block size M | 4 | not stated in ChaRNABERT (see table above) |
+| Norm biases | none | not stated in ChaRNABERT; Bio-xLSTM Table A3 uses no biases |
+| Learning rate 5e-4 to 5e-5, RNA data, context 2k–8k (§4–5) | 1e-2, hg38, context 1k | the project follows the DNA-xLSTM pretraining protocol so the NT results compare with Bio-xLSTM |
+| BEACON downstream tasks, class-token heads (§6) | NT benchmark, mean pooling + linear head | same reason |
 
 ## Training protocol
 
@@ -105,6 +128,18 @@ Tables A3/A4 list the optimizer and schedule for DNA-xLSTM (A4); A3 gives only s
 learning rate for Transformer++, so the A4 values are used for both, as the repo scripts do.
 Note that the repo's `scripts_pretrain/run_pretrain_llama.sh` uses `HIDDEN_DIM=1024` (4:1) and
 LR 8e-3, which differ from Table A3 (1.25:1, 1e-2 in bold). We follow Table A3.
+
+**UL2** (`MLM_STRATEGY=ul2`; ChaRNABERT §4.1): ChaRNABERT trains with MLM and, as a second
+masking strategy, UL2 (§4.1; "MLM/UL2 loss", §4.3), with a shared mask token and the same
+prediction as MLM (Eq. 15). It gives no span lengths, rates or mode probabilities, so we use the
+seven denoisers of UL2 Table 1, sampled uniformly per sequence: R (μ=3, r=0.15), R (μ=8, r=0.15),
+S (r=0.25), X (μ=3, r=0.5), X (μ=8, r=0.5), X (μ=64, r=0.15), X (μ=64, r=0.5). Spans are drawn with
+T5's `random_spans_noise_mask` (UL2 §9.2). ChaRNABERT labels the modes differently: its
+"S-denoising" (short spans) is UL2's R, its "R-denoising" (predict the continuation) is UL2's S
+(suffix masking); X is the same. Adaptations for an encoder-only model (our choices): corrupted
+positions are replaced in place by `[MASK]` and predicted at their positions; the suffix length is
+drawn uniformly from [1, L/2]; no mode tokens. Validation always uses standard 15% MLM so that
+MLM and UL2 runs are comparable.
 
 **NT benchmark** (Bio-xLSTM App. C.5, Table A5; repo `scripts_downstream/run_nucleotide.sh`):
 
@@ -163,6 +198,7 @@ python -m unittest tests.test_charna tests.test_downstream -v
 
 ```bash
 python scripts_charna/overfit_one_batch.py --fasta data/hg38/hg38.ml.fa --bed data/hg38/human-sequences.bed
+python scripts_charna/overfit_one_batch.py --fasta data/hg38/hg38.ml.fa --bed data/hg38/human-sequences.bed --strategy ul2
 ```
 
 **Pretraining** (from `scripts_pretrain/`; every setting is an environment variable, see the script)
@@ -170,6 +206,7 @@ python scripts_charna/overfit_one_batch.py --fasta data/hg38/hg38.ml.fa --bed da
 ```bash
 bash run_pretrain_charna.sh                                    # GBST + BERT, MLM, 10k steps
 MODEL=llama bash run_pretrain_charna.sh                        # Transformer++-2M baseline
+MLM_STRATEGY=ul2 RUN_NAME=charna_ul2 bash run_pretrain_charna.sh   # UL2 masking
 DOWNSAMPLE=2 RUN_NAME=charna_ds2 bash run_pretrain_charna.sh       # ablation d_s = 2
 TOKENIZER=embedding RUN_NAME=charna_emb bash run_pretrain_charna.sh  # ablation: no GBST
 ```
@@ -193,6 +230,8 @@ Finished runs are skipped when the script is restarted.
 48 optimizer steps (≈50M tokens) per model, same data and logging as the full run, learning-rate
 schedule compressed to 48 steps (≈5 warmup steps), validation on 64 batches. This only checks that
 everything runs; it says nothing about final quality.
+The GBST + BERT smoke run used the earlier GBST without the pointwise projection
+(`gbst_pointwise_conv=false`, 2,041,856 parameters).
 
 | Tokens | GBST + BERT val / test loss | Transformer++-2M val / test loss |
 |---|---|---|

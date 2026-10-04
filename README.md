@@ -5,7 +5,7 @@
 # DNA-xLSTM
 
 > **Branch `charna-gbst`:** adds a ChaRNABERT-style model (GBST in front of a bidirectional
-> BERT-style Transformer encoder, trained with MLM), pretrained on hg38 with the short-context
+> BERT-style Transformer encoder, trained with MLM or UL2), pretrained on hg38 with the short-context
 > DNA-xLSTM protocol and evaluated on the Nucleotide Transformer benchmark.
 > See [README_CHARNA.md](README_CHARNA.md).
 
