@@ -11,7 +11,7 @@ DEST=$(realpath "${DEST}")
 
 cd "${SRC}"
 find . -type f \( -name metrics.csv -o -name model_config.json -o -name summary.txt \
-    -o -name queue.txt -o -name "nt_results*.md" \) |
+    -o -name queue.txt -o -name "nt_results*.md" -o -name "eval_*.md" -o -name "eval_*.csv" \) |
   while read -r f; do
     mkdir -p "${DEST}/$(dirname "$f")"
     cp "$f" "${DEST}/$f"

@@ -35,7 +35,7 @@ Papers used (all hyperparameters below cite one of them):
 | Model, UL2, configs, tests | done, 23 unit tests pass |
 | Overfit one batch | done: loss < 0.05 after 164 steps (MLM) and 230 steps (UL2) |
 | Smoke run (50M tokens, both models) | done, see [Smoke run](#smoke-run-50m-tokens) |
-| Small experiment (≈0.5B tokens, both models, accuracy + loss curve) | **running** since 4 Oct 2026 16:20 CEST, see [Small experiment](#small-experiment-05b-tokens) |
+| Small experiment (≈0.5B tokens, both models, accuracy + loss curve) | **done** (4 Oct 2026, 22:05 CEST), see [Small experiment](#small-experiment-05b-tokens): both ≈44% masked-base accuracy, GBST-BERT very slightly ahead |
 | Full pretraining (10.5B tokens, both models) | on hold until the small experiment is reviewed. Two started runs were stopped: one with the earlier GBST and LR 1e-2 (~1 h), one with the final settings (~30 min) |
 | NT benchmark (18 tasks) | pipeline ready and tested end to end; waits for the full pretraining |
 | Ablations (d_s, MLM vs UL2, RC aug, GBST vs embedding) | not started |
@@ -287,8 +287,44 @@ Why the reference rows matter: in a test of the evaluation script on the 48-step
 (64 sequences), the smoke GBST model reached 29.1% accuracy only by always guessing "A", exactly
 the "always most common base" reference; the smoke Transformer++ reached 32.8%.
 
-**Results:** running; the loss curve and the accuracy table will be added here when the runs
-finish. These are early results after 5% of the pretraining, not final numbers.
+**Results** (finished 4 Oct 2026, 22:05 CEST). Early results after 5% of the full pretraining,
+one run per model; not final numbers.
+
+![Validation loss of the small experiment](results/small_val_loss.png)
+
+Validation loss (nats per hidden base, 2% of the validation set) during training:
+
+| Step | Bases seen | GBST-BERT (LR 5e-4) | Transformer++-2M (LR 1e-2) |
+|---|---|---|---|
+| 100 | 0.10 B | 1.3399 | 1.2626 |
+| 200 | 0.21 B | 1.3011 | 1.2422 |
+| 300 | 0.31 B | 1.2146 | 1.2112 |
+| 400 | 0.42 B | 1.2004 | 1.1996 |
+| 500 | 0.52 B | **1.1944** | 1.1960 |
+
+Masked-base prediction of the final models on 2,048 held-out **test** sequences (311,767 hidden
+bases, identical masks for both models; validation split in brackets, 312,461 hidden bases):
+
+| Model | Loss (nats) | Accuracy | Acc. A | Acc. C | Acc. G | Acc. T |
+|---|---|---|---|---|---|---|
+| GBST-BERT | 1.1944 (1.1945) | **43.94%** (44.12%) | 53.9% | 32.0% | 36.1% | 47.9% |
+| Transformer++-2M | 1.1958 (1.1955) | 43.77% (43.95%) | 51.0% | 33.0% | 31.5% | 52.8% |
+| Random guess | 1.3863 | 25.00% | 25% | 25% | 25% | 25% |
+| Always the most common base | – | 29.42% (29.97%) | | | | |
+
+Reading the results:
+- Both models clearly learned DNA context: 44% accuracy against 25% (random) and 29–30%
+  (always the most common base); loss 1.19 against 1.37 for base composition alone.
+- Transformer++ learned faster at the start; GBST-BERT caught up by 0.3B bases and ends very
+  slightly ahead (+0.17 percentage points accuracy, −0.001 loss, on both splits). With one
+  training run per model this difference is too small to call a winner.
+- GBST-BERT predicts G better (36% vs 31.5%) and T worse (48% vs 53%) than Transformer++ on the
+  test split; overall accuracy is almost the same.
+- The published 2M models reach ≈0.96–1.03 test loss after 2–10B bases (Bio-xLSTM Fig. 2); both
+  curves here are still falling at 0.5B bases.
+
+Next: a learning-rate check for GBST-BERT (1e-3, 2e-3, 5e-3; 500 steps each, chosen by
+validation loss), then the full 10.5B-base runs.
 
 ## Smoke run (50M tokens)
 

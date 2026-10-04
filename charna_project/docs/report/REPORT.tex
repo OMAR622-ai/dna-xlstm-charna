@@ -36,7 +36,7 @@
 \begin{center}
 {\LARGE\bfseries\color{accent} A ChaRNABERT-style model for human DNA}\\[6pt]
 {\large GBST tokenization + bidirectional BERT encoder, on the DNA-xLSTM code base}\\[10pt]
-Progress report \quad$\cdot$\quad Omar R.A Mohamed \quad$\cdot$\quad 4 October 2026, 18:30 CEST\\[4pt]
+Progress report \quad$\cdot$\quad Omar R.A Mohamed \quad$\cdot$\quad 4 October 2026, 22:30 CEST\\[4pt]
 Code: \url{https://github.com/OMAR622-ai/dna-xlstm-charna} (branch \code{charna-gbst}, private)
 \end{center}
 
@@ -44,11 +44,12 @@ Code: \url{https://github.com/OMAR622-ai/dna-xlstm-charna} (branch \code{charna-
 \noindent\colorbox{soft}{\parbox{\dimexpr\linewidth-2\fboxsep}{
 \textbf{Summary.} The ChaRNABERT architecture --- a learnable tokenizer (GBST) in front of a
 bidirectional BERT encoder --- was implemented in the DNA-xLSTM code base, tested (23 automatic
-tests pass) and adapted to human DNA (hg38). It is being pretrained on 0.5 billion bases, next to
-a same-size comparison model without GBST (Transformer++). First result: the validation loss of
-GBST-BERT fell from 1.340 (0.1 B bases) to 1.301 (0.2 B bases); random guessing is 1.386.
-The accuracy table and loss curves of both models are expected tonight, 4 October, and will be
-added to an updated version of this report. No benchmark (downstream task) results yet.
+tests pass) and adapted to human DNA (hg38). In a small experiment (0.5 billion bases, 5\% of
+the planned training) it learned to predict hidden bases with \textbf{43.9\% accuracy} on unseen
+test DNA (random guessing: 25\%; always guessing the most common base: 29.4\%), with a loss of
+1.194. A same-size comparison model without GBST (Transformer++) reached 43.8\% and 1.196: it
+learned faster at first, GBST-BERT caught up and ends very slightly ahead --- too small a
+difference to call a winner after one short run each. No benchmark (downstream task) results yet.
 }}
 
 \tableofcontents
@@ -282,23 +283,59 @@ the older GBST and learning rate. A test of the accuracy script on these smoke m
 accuracy needs reference values: the smoke GBST model reached 29.1\% only by always answering
 ``A'' (the most common hidden base), i.e.\ no better than no model; Transformer++ reached 32.8\%.
 
-\textbf{Small experiment (running).} Current GBST-BERT validation loss (2\% of the validation set):
+\textbf{Small experiment (finished 4 October, 22:05).} Both models trained for 500 steps
+($\approx$0.52 billion bases) with the settings of Section~4. Validation loss during training
+(2\% of the validation set):
 
-\begin{center}\small
-\begin{tabular}{rrcc}
+\begin{center}
+\begin{minipage}{0.47\linewidth}\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{rccc}
 \toprule
-Step & Bases seen & Validation loss & Test loss \\
+Step & Bases & GBST-BERT & Transformer++ \\
 \midrule
-100 & 0.10 B & 1.3399 & 1.3437 \\
-200 & 0.21 B & 1.3011 & 1.3013 \\
+100 & 0.10 B & 1.3399 & 1.2626 \\
+200 & 0.21 B & 1.3011 & 1.2422 \\
+300 & 0.31 B & 1.2146 & 1.2112 \\
+400 & 0.42 B & 1.2004 & 1.1996 \\
+500 & 0.52 B & \textbf{1.1944} & 1.1960 \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}{0.51\linewidth}
+\includegraphics[width=\linewidth]{figures/small_val_loss.png}
+\end{minipage}
+\end{center}
+
+\textbf{Accuracy test.} The final models predicted the hidden bases of 2,048 test sequences they
+had never seen (311,767 hidden bases; both models got exactly the same hidden positions).
+Validation-split values in brackets.
+
+\begin{center}\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccc}
+\toprule
+Model & Loss & Accuracy & A & C & G & T \\
+\midrule
+GBST-BERT & 1.1944 (1.1945) & \textbf{43.94\%} (44.12\%) & 53.9\% & 32.0\% & 36.1\% & 47.9\% \\
+Transformer++ & 1.1958 (1.1955) & 43.77\% (43.95\%) & 51.0\% & 33.0\% & 31.5\% & 52.8\% \\
+Random guess & 1.3863 & 25.00\% & 25\% & 25\% & 25\% & 25\% \\
+Always ``A'' (most common) & -- & 29.42\% (29.97\%) & & & & \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The loss is falling clearly below the random-guess level (1.386) and below the smoke run.
-Still to come tonight: steps 300--500, the Transformer++ run, and the accuracy table (loss,
-accuracy, accuracy per base, compared with random guessing and with always guessing the most
-common base).
+\textbf{What this means.}
+\begin{itemize}
+\item \emph{Both models learned real DNA patterns}: 44\% accuracy, well above random guessing
+  (25\%) and above always guessing the most common base (29--30\%); loss 1.19 versus 1.37 for a
+  model that knows only the base composition.
+\item \emph{GBST-BERT starts slower, then catches up}: it first has to learn \emph{how} to read
+  before it can use it. At the end it is very slightly ahead (+0.17 percentage points accuracy on
+  both splits). With a single training run per model, this is too small to call a winner.
+\item \emph{Different strengths per base}: GBST-BERT predicts G better (36\% vs.\ 31.5\%) and T
+  worse (48\% vs.\ 53\%).
+\item \emph{Room to improve}: the published 2 M models reach about 0.96--1.03 test loss after
+  2--10 billion bases (Bio-xLSTM Fig.~2). Both curves here are still falling at 0.5 billion bases.
+\end{itemize}
 
 \textbf{Not done yet:} the full 10.5-billion-base training, the NT benchmark, and the planned
 comparisons (with/without GBST at full scale, MLM vs.\ UL2, with/without strand flipping).
@@ -330,10 +367,10 @@ validation data, so its curve is noisier than the full run's will be.
 % ------------------------------------------------------------------------------------------
 \section{Next steps}
 \begin{enumerate}
-\item Tonight: finish the small experiment; add the loss curves and the accuracy table to this
-  report and to GitHub.
-\item Review the results together; decide whether to start the full 40-hour training, and for
-  which models.
+\item Learning-rate check for GBST-BERT: 500-step runs with 1e-3, 2e-3 and 5e-3, compared by
+  validation loss with the 5e-4 run (about 7--8 hours).
+\item Full training (10.5 billion bases) of GBST-BERT with the best learning rate and of
+  Transformer++, aiming at a loss near 1.0.
 \item After full training: the Nucleotide Transformer benchmark (18 tasks) and the comparisons.
 \end{enumerate}
 

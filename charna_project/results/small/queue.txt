@@ -1,1 +1,10 @@
 2026-10-04 16:20:53 start pretrain charna
+queue: NT step removed; part 2 launched, waiting for pid 144079
+2026-10-04 19:55:26 end pretrain charna (exit status not available after queue change)
+2026-10-04 19:55:26 start pretrain llama
+2026-10-04 22:02:19 end pretrain llama exit=0
+2026-10-04 22:02:19 start evaluation valid
+2026-10-04 22:03:28 end evaluation valid exit=0
+2026-10-04 22:03:28 start evaluation test
+2026-10-04 22:04:35 end evaluation test exit=0
+2026-10-04 22:04:35 SMALL_DONE
