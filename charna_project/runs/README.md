@@ -84,3 +84,6 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-04 22:17 | `c6b09b1` | Small experiment results: loss curves and masked-base accuracy of GBST-BERT and Transformer++ |
 | 2026-10-04 22:17 | `81736f9` | charna_project: small experiment results |
 | 2026-10-04 22:43 | `9389abb` | Record every run: one page per run plus project log |
+| 2026-10-04 22:43 | `b114945` | charna_project: run pages (R01-R18), configs and logs of every run |
+| 2026-10-04 22:43 | `84bd6b5` | export: tidy header comment |
+| 2026-10-04 22:43 | `3de13f1` | Rebuild charna_project/ |
