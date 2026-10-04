@@ -23,7 +23,7 @@ Papers used (all hyperparameters below cite one of them):
 | Model, UL2, configs, tests | done, 23 unit tests pass |
 | Overfit one batch | done: loss < 0.05 after 164 steps (MLM) and 230 steps (UL2) |
 | Smoke run (50M tokens, both models) | done, see [Smoke run](#smoke-run-50m-tokens) |
-| Full pretraining, GBST + BERT (10.5B tokens) | **running** (started 4 Oct 2026, ~40 h), but with the earlier GBST version without the pointwise projection (`gbst_pointwise_conv=false`); restart pending |
+| Full pretraining, GBST + BERT (10.5B tokens) | **running** (restarted 4 Oct 2026 with the paper-exact GBST and LR 5e-4, ~40 h). A first attempt with the earlier GBST and LR 1e-2 was stopped after ~1 h |
 | Full pretraining, Transformer++-2M baseline | queued after GBST + BERT |
 | NT benchmark | pipeline ready and tested end to end; waits for pretrained checkpoints |
 | Ablations (d_s, MLM vs UL2, RC aug, GBST vs embedding) | not started |
@@ -102,7 +102,7 @@ these exceptions:
 | Eq. 9 written as σ(xW₁) ⊙ swish(xW₂) | standard SwiGLU, swish(xW₁) ⊙ xW₂ | the text cites SwiGLU (Shazeer, 2020), which is the standard form; Eq. 9 as printed is a different function |
 | Max block size M | 4 | not stated in ChaRNABERT (see table above) |
 | Norm biases | none | not stated in ChaRNABERT; Bio-xLSTM Table A3 uses no biases |
-| Learning rate 5e-4 to 5e-5, RNA data, context 2k–8k (§4–5) | 1e-2, hg38, context 1k | the project follows the DNA-xLSTM pretraining protocol so the NT results compare with Bio-xLSTM |
+| RNA data, context 2k–8k, bf16 (§4–5) | hg38, context 1k, fp32 | the project follows the DNA-xLSTM pretraining protocol so the NT results compare with Bio-xLSTM |
 | BEACON downstream tasks, class-token heads (§6) | NT benchmark, mean pooling + linear head | same reason |
 
 ## Training protocol
@@ -116,8 +116,8 @@ Tables A3 and A4), identical for GBST + BERT and the Transformer++-2M baseline:
 | Tokens per step | 2²⁰ (1,024 sequences × 1,024) | App. C.5 |
 | Update steps | 10,000 (≈10.5B tokens) | Table A4 |
 | Optimizer | AdamW, β = (0.9, 0.95), weight decay 0.1 | Table A4 |
-| Learning rate | 1e-2 (Transformer++-2M sweep 6e-3, 8e-3, **1e-2**) | Table A3 |
-| Schedule | cosine decay, 1,000 warmup steps | Table A4 (repo: `warmup_t = 0.1 × max_steps`, `lr_min = 1e-4`) |
+| Learning rate | GBST + BERT: 5e-4; Transformer++-2M: 1e-2 | GBST + BERT: ChaRNABERT Table 2 (best value for the 5M model, with GBST and with EM); Transformer++: Bio-xLSTM Table A3 (sweep 6e-3, 8e-3, **1e-2**) |
+| Schedule | cosine decay, 1,000 warmup steps, minimum LR 1e-4 | Table A4 (repo `hg38.yaml`: `warmup_t = 0.1 × max_steps`, `lr_min = 1e-4`). ChaRNABERT gives no schedule |
 | Dropout | 0 | Table A4 |
 | Gradient clipping | 1.0 | repo `run_pretrain_*.sh` |
 | MLM | 15% of tokens; 80% `[MASK]`, 10% random, 10% unchanged | App. C.5 |
