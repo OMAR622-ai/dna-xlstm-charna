@@ -44,6 +44,7 @@ All changes are additive: existing models and default behaviour are unchanged
 | `configs/model/charna.yaml` | Hydra model config (`model=charna`) |
 | `src/dataloaders/utils/ul2.py` | UL2 masking (ChaRNABERT §4.1) adapted to in-place `[MASK]` |
 | `src/dataloaders/datasets/hg38_dataset.py`, `src/dataloaders/genomics.py` | `mlm_strategy: mlm \| ul2` switch (train split only) |
+| `src/dataloaders/datasets/nucleotide_transformer_dataset.py` | Fix: load each NT task's own parquet file (see [Known issues](#known-issues)) |
 | `src/models/sequence/dna_embedding.py` | Downstream wrappers `DNAEmbeddingModelCharna` and `DNAEmbeddingModelTransformer` |
 | `src/utils/registry.py` | `charna_lm`, `dna_embedding_charna`, `dna_embedding_llama`, `metrics_csv` |
 | `src/callbacks/metrics_csv.py` | Writes validation/test metrics to `metrics.csv` (wandb is off on our server) |
@@ -246,12 +247,12 @@ which uses gradient checkpointing). Estimated full run: ≈40 h per model includ
 
 ## Known issues
 
-- **NT data loading (repo bug, not yet fixed in this branch).** The Hugging Face dataset
+- **NT data loading (repo bug, fixed in this branch).** The Hugging Face dataset
   `InstaDeepAI/nucleotide_transformer_downstream_tasks` is now stored as one parquet file per task,
-  and `load_dataset(..., name=<task>)` in `src/dataloaders/datasets/nucleotide_transformer_dataset.py`
-  silently loads **all 18 tasks** (461,850 training rows). Loading
-  `data_files={split: f"{task}/{split}.parquet"}` instead gives the training-set sizes in
+  and the original `load_dataset(..., name=<task>)` silently loaded **all 18 tasks** (461,850
+  training rows). `src/dataloaders/datasets/nucleotide_transformer_dataset.py` now loads
+  `data_files={split: f"{task}/{split}.parquet"}`, which gives the training-set sizes in
   `configs/dataset/nucleotide_transformer.yaml` for 17 of 18 tasks; `promoter_tata` has 5,509 rows
-  instead of 5,517. The fix changes shared code and is pending approval.
+  instead of 5,517 (the config value is only used to size the learning-rate schedule).
 - The global batch is reached with gradient accumulation (4 GPUs × 32 × 32) instead of the
   paper's larger per-step GPU batch; mathematically the same update, but slower.
