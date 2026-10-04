@@ -50,10 +50,12 @@ class NucleotideTransformerDataset(torch.utils.data.Dataset):
 
         self.split = split
 
-        # For NT tasks, we use data from InstaDeepAI/nucleotide_transformer_downstream_tasks
+        # For NT tasks, we use data from InstaDeepAI/nucleotide_transformer_downstream_tasks.
+        # The hub repo now stores one parquet file per task, and `name=dataset_name` no longer
+        # selects a task (it silently loads all 18), so the task's own file is loaded.
         self.seqs = load_dataset(
             "InstaDeepAI/nucleotide_transformer_downstream_tasks",
-            name=dataset_name,
+            data_files={split: f"{dataset_name}/{split}.parquet"},
             split=split
         )
 
