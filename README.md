@@ -4,6 +4,10 @@
 
 # DNA-xLSTM
 
+> **Branch `charna-gbst`:** adds a ChaRNABERT-style GBST + BERT model (MLM / UL2), pretrained on
+> hg38 with the short-context DNA-xLSTM protocol and evaluated on the Nucleotide Transformer
+> benchmark. See [README_CHARNA.md](README_CHARNA.md).
+
 This repository provides the code necessary to reproduce the experiments presented in the paper [Bio-xLSTM: Generative modeling, representation and in-context learning of biological and chemical sequences](https://arxiv.org/abs/2411.04165). The code is organized across the following repositories:
 
 - [DNA-xLSTM](https://github.com/ml-jku/DNA-xLSTM/) (current repository) 
