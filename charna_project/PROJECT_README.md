@@ -7,6 +7,16 @@ or, optionally, UL2 masking (ChaRNABERT §4.1). It is pretrained on hg38 with th
 DNA-xLSTM protocol and evaluated on the 18-task **Nucleotide Transformer (NT) benchmark**, so the
 results are directly comparable with the Bio-xLSTM paper.
 
+**Quick links**
+
+| | |
+|---|---|
+| Everything in one folder (code, data, results) | [`charna_project/`](./) |
+| Results of the runs | [`charna_project/results/`](results/) |
+| Data (interval list, hg38 sample, download script) | [`charna_project/datasets/`](datasets/), [`scripts_charna/download_data.sh`](../scripts_charna/download_data.sh) |
+| Model code (GBST + encoder) | [`models/charna/`](../models/charna/) |
+| Original DNA-xLSTM README (installation, data, other models) | [`README_DNA_XLSTM.md`](../README_DNA_XLSTM.md) |
+
 Papers used (all hyperparameters below cite one of them):
 
 | Short name | Paper |
@@ -30,8 +40,8 @@ Papers used (all hyperparameters below cite one of them):
 
 No final results are reported yet. Numbers in this file are from smoke runs and the small
 experiment and are labelled as such. All result files are in
-[`charna_project/results/`](charna_project/results/); the data that fits in git is in
-[`charna_project/datasets/`](charna_project/datasets/).
+[`charna_project/results/`](results/); the data that fits in git is in
+[`charna_project/datasets/`](datasets/).
 
 ## What was added
 

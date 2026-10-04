@@ -2,7 +2,8 @@
 
 This folder holds everything the GBST + BERT (ChaRNABERT-style) project added to the DNA-xLSTM
 code base: the code, the documentation, the data that fits in git, and the results of the runs.
-The full project documentation is [README_CHARNA.md](README_CHARNA.md).
+The full project documentation is the repository's main [README.md](../README.md); a copy is in
+[PROJECT_README.md](PROJECT_README.md).
 
 - **Code** (`models/`, `src/`, `configs/`, `scripts_*/`, `tests/`): copies. The code that runs
   lives at the same paths in the repository root (e.g. `models/charna/gbst.py`), because the
@@ -39,7 +40,7 @@ python -m unittest tests.test_charna -v
 | Path | What it is |
 |---|---|
 | `results/smoke/summary.txt`, `results/pretrain/hg38/smoke_*/metrics.csv` | Smoke run (48 steps, ≈50M tokens) of both models |
-| `results/small/`, `results/pretrain/hg38/small_*_500/`, `results/downstream/nt_small/` | Small experiment (500 steps, ≈0.5B tokens, then 4 NT tasks); see README_CHARNA.md, "Small experiment" |
+| `results/small/`, `results/pretrain/hg38/small_*_500/`, `results/downstream/nt_small/` | Small experiment (500 steps, ≈0.5B tokens, then 4 NT tasks); see the main README, "Small experiment" |
 | `results/pretrain/hg38/stopped_*`, `results/full/stopped*/` | Configurations of the two full runs that were stopped (no metrics yet when stopped) |
 
 Each `metrics.csv` has one row per validation: `global_step`, `tokens` seen, and the validation and
@@ -49,7 +50,7 @@ test losses (pretraining) or metrics (NT fine-tuning).
 
 | Path | What it is |
 |---|---|
-| `README_CHARNA.md` | Project documentation: goal, status, model, protocol with paper sources, how to run, results, known issues |
+| `PROJECT_README.md` | Copy of the project documentation (main README): goal, status, model, protocol with paper sources, how to run, results, known issues |
 | `models/charna/gbst.py` | GBST tokenizer |
 | `models/charna/modeling_charna.py` | Bidirectional encoder, MLM head, reverse-complement helpers |
 | `models/charna/configuration_charna.py`, `models/charna/__init__.py` | Model config (2M defaults) |
@@ -72,4 +73,5 @@ test losses (pretraining) or metrics (NT fine-tuning).
 | `changes_to_existing_files.patch` | Exact line-by-line changes to the files that already existed in DNA-xLSTM |
 
 For the changed upstream files, the copies here are the full new versions; the patch shows only
-what was changed (it also contains the one-paragraph link added to the main `README.md`).
+what was changed. The original DNA-xLSTM README is kept as `README_DNA_XLSTM.md` in the
+repository root.
