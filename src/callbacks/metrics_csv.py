@@ -1,8 +1,10 @@
 """Append validation metrics to a CSV file (rank 0), independent of wandb.
 
 Enable with `+callbacks.metrics_csv.filename=metrics.csv` (relative to the Hydra run dir).
-Each row: global_step, tokens seen (global_step * tokens_per_step), and every logged metric
-whose name starts with one of `prefixes` (exact float values, unlike the progress bar).
+Each row: global_step, tokens seen (global_step * tokens_per_step, if given), and every logged
+metric whose name starts with one of `prefixes` (exact float values, unlike the progress bar).
+Rows may carry different metrics (e.g. the final test pass of the NT benchmark logs test/*
+while the epochs before it log val/*); the header is the union of all columns seen so far.
 """
 
 import csv
@@ -30,9 +32,23 @@ class MetricsCSV(pl.Callback):
         if self.tokens_per_step is not None:
             row["tokens"] = trainer.global_step * int(self.tokens_per_step)
         row.update(sorted(metrics.items()))
-        new_file = not os.path.exists(self.filename)
-        with open(self.filename, "a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=list(row))
-            if new_file:
-                writer.writeheader()
-            writer.writerow(row)
+        append_row(self.filename, row)
+
+
+def append_row(filename, row):
+    """Append `row` to the CSV; rewrite the (small) file if `row` adds new columns."""
+    rows, fieldnames = [], []
+    if os.path.exists(filename):
+        with open(filename, newline="") as f:
+            reader = csv.DictReader(f)
+            fieldnames = list(reader.fieldnames or [])
+            rows = list(reader)
+    new_columns = [k for k in row if k not in fieldnames]
+    if not new_columns and fieldnames:
+        with open(filename, "a", newline="") as f:
+            csv.DictWriter(f, fieldnames=fieldnames).writerow(row)
+        return
+    with open(filename, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames + new_columns)
+        writer.writeheader()
+        writer.writerows(rows + [row])
