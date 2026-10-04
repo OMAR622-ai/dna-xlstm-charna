@@ -52,6 +52,7 @@ All changes are additive: existing models and default behaviour are unchanged
 | `scripts_charna/train_charna.py` | Launcher for GPUs without mamba_ssm / flash_attn (see [Hardware](#hardware-and-environment)) |
 | `scripts_charna/overfit_one_batch.py`, `scripts_charna/smoke_run.sh` | Sanity checks |
 | `tests/test_charna.py`, `tests/test_downstream.py` | Unit tests |
+| `charna_project/` | Copies of all files above in one folder, plus a patch of the changes to existing files (rebuilt by `scripts_charna/export_project_folder.sh`) |
 
 ## Model
 
