@@ -16,7 +16,7 @@
             "n_context": 0,
             "n_context_eval": 0
         },
-        "ckpt": "checkpoints/test/loss.ckpt",
+        "ckpt": "/system/user/omohamed/charna/dna-xlstm/outputs/full/resume_from_step3000.ckpt",
         "disable_dataset": false,
         "validate_at_start": false,
         "pretrained_model_path": null,
@@ -155,7 +155,7 @@
     "encoder": null,
     "decoder": null,
     "loader": {
-        "num_workers": 2,
+        "num_workers": 4,
         "pin_memory": false,
         "drop_last": true
     },

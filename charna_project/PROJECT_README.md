@@ -187,8 +187,12 @@ baseline with exactly the same pipeline.
 
 ## Hardware and environment
 
-Runs use the JKU server `student01` with 4× NVIDIA GTX 1080 Ti (11 GB, compute capability 6.1),
-shared with other users. Consequences:
+Runs up to 5 Oct 2026 17:20 used the JKU server `student01` with 4× NVIDIA GTX 1080 Ti (11 GB,
+compute capability 6.1), shared with other users. From then on the runs continue on `student07`
+(same shared home directory) on 4 GPUs: 2× RTX 2080 Ti (11 GB, 7.5) and 2× Quadro GV100 (32 GB,
+7.0), with the same settings (fp32, global batch 1,024); the full GBST-BERT run was resumed there
+from its step-3,000 checkpoint ([docs/MOVING_TO_NEW_SERVER.md](../docs/MOVING_TO_NEW_SERVER.md)).
+Consequences of the older GPUs, kept for comparability:
 
 - **fp32** training: the GPUs have no bf16 and no fast fp16 (the paper used bf16 on A100s).
 - `mamba_ssm`, `causal_conv1d` and `flash_attn` cannot be built for these GPUs. The repo imports

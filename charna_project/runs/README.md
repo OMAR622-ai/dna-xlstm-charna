@@ -21,7 +21,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | [R13_lr_1e-3](R13_lr_1e-3.md) | Learning-rate check, GBST-BERT LR 1e-3 | ✅ done | 2026-10-04 22:10 | Validation loss at step 500: 1.1869 (5e-4 run: 1.1944). |
 | [R14_lr_2e-3](R14_lr_2e-3.md) | Learning-rate check, GBST-BERT LR 2e-3 | ✅ done | 2026-10-05 00:23 | Best of the four: validation loss at step 500 1.1541 (test 1.1380). |
 | [R15_lr_5e-3](R15_lr_5e-3.md) | Learning-rate check, GBST-BERT LR 5e-3 | ✅ done | 2026-10-05 02:41 | Validation loss at step 500: 1.1605, second best. |
-| [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ⏳ running | 2026-10-05 05:00 | First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402. |
+| [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ⏳ running | 2026-10-05 05:00 (student01); resumed 2026-10-05 17:21 (student07) | First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402. |
 | [R17_full_llama](R17_full_llama.md) | Full pretraining, Transformer++ (10.5 B bases) | 🕒 queued | – | – |
 | [R18_eval_full](R18_eval_full.md) | Accuracy of the full models | 🕒 queued | – | – |
 
@@ -50,6 +50,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-04 22:40 | Every run documented: one page per run (charna_project/runs/), settings and logs of all runs collected. |
 | 2026-10-05 05:00 | Learning-rate check done: 2e-3 best (val 1.1541 at step 500, vs 1.1605 / 1.1869 / 1.1944 for 5e-3 / 1e-3 / 5e-4). Full GBST-BERT run (R16) started automatically with 2e-3. |
 | 2026-10-05 16:52 | Saved for moving to a new server: 7 checkpoints (charna_project/models/), Python environment, server queue scripts, moving guide (docs/MOVING_TO_NEW_SERVER.md). Resuming from a checkpoint tested. |
+| 2026-10-05 17:21 | Moved to server student07 (same shared home): R16 stopped on student01 after its step-3,000 checkpoint and resumed on student07 (2× RTX 2080 Ti + 2× Quadro GV100), ≈2.5× faster. R17 and R18 queued there. |
 
 ## Code changes (git commits on this branch)
 
@@ -95,3 +96,5 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-05 05:08 | `0742db0` | Rebuild charna_project/ |
 | 2026-10-05 16:46 | `dfc74dd` | Run status 5 Oct 16:39: R16 first validation point (2.1B bases, val 1.0559) |
 | 2026-10-05 16:56 | `384afc8` | Prepare moving to a new server: guide, server queue scripts |
+| 2026-10-05 16:56 | `bd2960a` | Save trained models (7 checkpoints), Python environment and latest results |
+| 2026-10-05 17:35 | `a967e39` | Move training to student07: R16 resumed there from its step-3,000 checkpoint |
