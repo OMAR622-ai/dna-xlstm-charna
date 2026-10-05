@@ -18,6 +18,7 @@ python scripts_charna/evaluate_mlm.py outputs/pretrain/hg38/full_charna_mlm:GBST
 
 ## Files
 
+- [`results/full/queue.txt`](../results/full/queue.txt)
 - [`results/full/stopped/queue.txt`](../results/full/stopped/queue.txt)
 - [`results/full/stopped2/queue.txt`](../results/full/stopped2/queue.txt)
 

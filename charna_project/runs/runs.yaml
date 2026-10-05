@@ -152,9 +152,11 @@ runs:
   - id: R13_lr_1e-3
     title: Learning-rate check, GBST-BERT LR 1e-3
     kind: pretraining
-    status: running
+    status: done
     started: "2026-10-04 22:10"
+    ended: "2026-10-05 00:23"
     model: GBST-BERT, final version, LR 1e-3
+    outcome: "Validation loss at step 500: 1.1869 (5e-4 run: 1.1944). Exit 0."
     purpose: Find a better learning rate than 5e-4 for the full run (chosen by validation loss at step 500).
     command: MODEL=charna LR=1e-3 RUN_NAME=small_charna_500_lr1e-3 MAX_STEPS=500 VAL_EVERY=100 LIMIT_VAL=0.02 CKPT_EVERY=100 bash scripts_pretrain/run_pretrain_charna.sh   (from ~/charna/run_lr_check.sh)
     results: [pretrain/hg38/small_charna_500_lr1e-3, lr_check]
@@ -162,8 +164,11 @@ runs:
   - id: R14_lr_2e-3
     title: Learning-rate check, GBST-BERT LR 2e-3
     kind: pretraining
-    status: queued
+    status: done
+    started: "2026-10-05 00:23"
+    ended: "2026-10-05 02:41"
     model: GBST-BERT, final version, LR 2e-3
+    outcome: "Best of the four: validation loss at step 500 1.1541 (test 1.1380). Exit 0. Chosen for the full run."
     purpose: As R13.
     command: (same as R13 with LR=2e-3)
     results: [pretrain/hg38/small_charna_500_lr2e-3, lr_check]
@@ -171,8 +176,11 @@ runs:
   - id: R15_lr_5e-3
     title: Learning-rate check, GBST-BERT LR 5e-3
     kind: pretraining
-    status: queued
+    status: done
+    started: "2026-10-05 02:41"
+    ended: "2026-10-05 04:59"
     model: GBST-BERT, final version, LR 5e-3
+    outcome: "Validation loss at step 500: 1.1605, second best. Exit 0."
     purpose: As R13.
     command: (same as R13 with LR=5e-3)
     results: [pretrain/hg38/small_charna_500_lr5e-3, lr_check]
@@ -180,8 +188,9 @@ runs:
   - id: R16_full_charna
     title: Full pretraining, GBST-BERT (10.5 B bases)
     kind: pretraining
-    status: queued
-    model: GBST-BERT, final version, best LR of R09/R13–R15 (by validation loss at step 500)
+    status: running
+    started: "2026-10-05 05:00"
+    model: "GBST-BERT, final version, LR 2e-3 (best of R09/R13–R15 by validation loss at step 500)"
     purpose: The main run.
     command: MODEL=charna LR=<best> RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh   (from ~/charna/run_full_after_lr.sh)
     results: [pretrain/hg38/full_charna_mlm, full]
@@ -224,3 +233,5 @@ log:
   - {when: "2026-10-04 18:28", what: "Progress report (PDF) added."}
   - {when: "2026-10-04 22:17", what: "Small-experiment results added to README and report."}
   - {when: "2026-10-04 22:30", what: "Learning-rate check (R13–R15) running; full runs (R16–R18) queued to start automatically after it."}
+  - {when: "2026-10-04 22:40", what: "Every run documented: one page per run (charna_project/runs/), settings and logs of all runs collected."}
+  - {when: "2026-10-05 05:00", what: "Learning-rate check done: 2e-3 best (val 1.1541 at step 500, vs 1.1605 / 1.1869 / 1.1944 for 5e-3 / 1e-3 / 5e-4). Full GBST-BERT run (R16) started automatically with 2e-3."}

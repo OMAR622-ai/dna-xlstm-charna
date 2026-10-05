@@ -18,6 +18,7 @@ MODEL=llama RUN_NAME=full_llama_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pre
 
 ## Files
 
+- [`results/full/queue.txt`](../results/full/queue.txt)
 - [`results/full/stopped/queue.txt`](../results/full/stopped/queue.txt)
 - [`results/full/stopped2/queue.txt`](../results/full/stopped2/queue.txt)
 

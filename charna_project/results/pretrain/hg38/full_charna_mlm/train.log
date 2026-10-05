@@ -1,0 +1,12 @@
+[2026-10-05 05:00:32,289][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.LearningRateMonitor>
+[2026-10-05 05:00:32,290][__main__][INFO] - Instantiating callback <src.callbacks.timer.Timer>
+[2026-10-05 05:00:32,296][__main__][INFO] - Instantiating callback <src.callbacks.params.ParamsLog>
+[2026-10-05 05:00:32,299][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-05 05:00:32,300][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-05 05:00:32,300][__main__][INFO] - Instantiating callback <src.callbacks.metrics_csv.MetricsCSV>
+[2026-10-05 05:00:32,304][__main__][INFO] - Instantiating trainer <pytorch_lightning.Trainer>
+[2026-10-05 05:00:32,430][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
+[2026-10-05 05:00:32,566][__main__][INFO] - config.train.ckpt='checkpoints/test/loss.ckpt' fsspec_exists(config.train.ckpt)=False
+[2026-10-05 05:00:52,571][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
+[2026-10-05 05:00:52,685][__main__][INFO] - Optimizer group 0 | 32 tensors | weight_decay 0.1
+[2026-10-05 05:00:52,685][__main__][INFO] - Optimizer group 1 | 19 tensors | weight_decay 0.0

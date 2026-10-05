@@ -1,0 +1,2 @@
+2026-10-05 05:00:09 LR check done; best GBST-BERT LR by val/loss at step 500: 2e-3
+2026-10-05 05:00:09 start full pretrain charna (LR 2e-3)

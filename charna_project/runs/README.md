@@ -18,10 +18,10 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | [R10_small_llama](R10_small_llama.md) | Small experiment, Transformer++ (500 steps) | ✅ done | 2026-10-04 19:55 | Validation loss 1.263 → 1.196 (test 1.196). |
 | [R11_eval_smoke](R11_eval_smoke.md) | Accuracy script test on the smoke models | ✅ done | 2026-10-04 ≈17:45 | Script works. |
 | [R12_eval_small](R12_eval_small.md) | Accuracy of the small-experiment models | ✅ done | 2026-10-04 22:02 | Test accuracy GBST-BERT 43.94% (loss 1.1944), Transformer++ 43.77% (1.1958); random 25%, always-most-common 29.42%. |
-| [R13_lr_1e-3](R13_lr_1e-3.md) | Learning-rate check, GBST-BERT LR 1e-3 | ⏳ running | 2026-10-04 22:10 | – |
-| [R14_lr_2e-3](R14_lr_2e-3.md) | Learning-rate check, GBST-BERT LR 2e-3 | 🕒 queued | – | – |
-| [R15_lr_5e-3](R15_lr_5e-3.md) | Learning-rate check, GBST-BERT LR 5e-3 | 🕒 queued | – | – |
-| [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | 🕒 queued | – | – |
+| [R13_lr_1e-3](R13_lr_1e-3.md) | Learning-rate check, GBST-BERT LR 1e-3 | ✅ done | 2026-10-04 22:10 | Validation loss at step 500: 1.1869 (5e-4 run: 1.1944). |
+| [R14_lr_2e-3](R14_lr_2e-3.md) | Learning-rate check, GBST-BERT LR 2e-3 | ✅ done | 2026-10-05 00:23 | Best of the four: validation loss at step 500 1.1541 (test 1.1380). |
+| [R15_lr_5e-3](R15_lr_5e-3.md) | Learning-rate check, GBST-BERT LR 5e-3 | ✅ done | 2026-10-05 02:41 | Validation loss at step 500: 1.1605, second best. |
+| [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ⏳ running | 2026-10-05 05:00 | – |
 | [R17_full_llama](R17_full_llama.md) | Full pretraining, Transformer++ (10.5 B bases) | 🕒 queued | – | – |
 | [R18_eval_full](R18_eval_full.md) | Accuracy of the full models | 🕒 queued | – | – |
 
@@ -47,6 +47,8 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-04 18:28 | Progress report (PDF) added. |
 | 2026-10-04 22:17 | Small-experiment results added to README and report. |
 | 2026-10-04 22:30 | Learning-rate check (R13–R15) running; full runs (R16–R18) queued to start automatically after it. |
+| 2026-10-04 22:40 | Every run documented: one page per run (charna_project/runs/), settings and logs of all runs collected. |
+| 2026-10-05 05:00 | Learning-rate check done: 2e-3 best (val 1.1541 at step 500, vs 1.1605 / 1.1869 / 1.1944 for 5e-3 / 1e-3 / 5e-4). Full GBST-BERT run (R16) started automatically with 2e-3. |
 
 ## Code changes (git commits on this branch)
 
@@ -87,3 +89,4 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-04 22:43 | `b114945` | charna_project: run pages (R01-R18), configs and logs of every run |
 | 2026-10-04 22:43 | `84bd6b5` | export: tidy header comment |
 | 2026-10-04 22:43 | `3de13f1` | Rebuild charna_project/ |
+| 2026-10-04 22:50 | `dba5c1c` | Run status 4 Oct 22:43: R13 (LR 1e-3) step 100 |
