@@ -33,9 +33,18 @@ MODEL=charna LR=<best> RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pret
 | Validation | every 2000 steps, on 12.5% of the batches of the validation and test sets |
 | Seed | 2222 |
 
+## Validation during training (`metrics.csv`)
+
+Loss in nats per hidden base; 1.386 = random guess among A/C/G/T.
+
+| Step | Bases seen | Validation loss | Test loss |
+|---|---|---|---|
+| 2000 | 2.097 B | 1.0559 | 1.0402 |
+
 ## Files
 
 - [`results/pretrain/hg38/full_charna_mlm/config.json`](../results/pretrain/hg38/full_charna_mlm/config.json)
+- [`results/pretrain/hg38/full_charna_mlm/metrics.csv`](../results/pretrain/hg38/full_charna_mlm/metrics.csv)
 - [`results/pretrain/hg38/full_charna_mlm/model_config.json`](../results/pretrain/hg38/full_charna_mlm/model_config.json)
 - [`results/pretrain/hg38/full_charna_mlm/train.log`](../results/pretrain/hg38/full_charna_mlm/train.log)
 - [`results/full/queue.txt`](../results/full/queue.txt)

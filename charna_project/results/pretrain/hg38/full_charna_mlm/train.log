@@ -10,3 +10,6 @@
 [2026-10-05 05:00:52,571][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
 [2026-10-05 05:00:52,685][__main__][INFO] - Optimizer group 0 | 32 tensors | weight_decay 0.1
 [2026-10-05 05:00:52,685][__main__][INFO] - Optimizer group 1 | 19 tensors | weight_decay 0.0
+[2026-10-05 05:00:58,548][__main__][INFO] - Creating validation loaders
+[2026-10-05 05:00:58,548][__main__][INFO] - ['val', 'test']
+[2026-10-05 05:01:00,250][__main__][INFO] - Creating train loader

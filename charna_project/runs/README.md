@@ -90,3 +90,5 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-04 22:43 | `84bd6b5` | export: tidy header comment |
 | 2026-10-04 22:43 | `3de13f1` | Rebuild charna_project/ |
 | 2026-10-04 22:50 | `dba5c1c` | Run status 4 Oct 22:43: R13 (LR 1e-3) step 100 |
+| 2026-10-05 05:08 | `f0235da` | Learning-rate check done: 2e-3 best for GBST-BERT; full run R16 started with it |
+| 2026-10-05 05:08 | `0742db0` | Rebuild charna_project/ |
