@@ -20,6 +20,7 @@ results are directly comparable with the Bio-xLSTM paper.
 | Model code (GBST + encoder) | [`models/charna/`](../models/charna/) |
 | Progress report (PDF) | [`docs/report/REPORT.pdf`](../docs/report/REPORT.pdf) |
 | Beginner's explanation of the whole project | [`docs/EXPLAINED.md`](../docs/EXPLAINED.md) |
+| 50 questions and short answers | [`docs/QA_50.md`](../docs/QA_50.md) |
 | Original DNA-xLSTM README (installation, data, other models) | [`README_DNA_XLSTM.md`](../README_DNA_XLSTM.md) |
 
 Papers used (all hyperparameters below cite one of them):
