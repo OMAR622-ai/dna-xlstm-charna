@@ -29,3 +29,19 @@
 [2026-10-05 17:22:51,224][__main__][INFO] - Creating train loader
 [2026-10-05 17:22:51,265][__main__][INFO] - Creating validation loaders
 [2026-10-05 17:22:51,265][__main__][INFO] - ['val', 'test']
+[2026-10-05 21:59:02,635][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.LearningRateMonitor>
+[2026-10-05 21:59:02,635][__main__][INFO] - Instantiating callback <src.callbacks.timer.Timer>
+[2026-10-05 21:59:02,640][__main__][INFO] - Instantiating callback <src.callbacks.params.ParamsLog>
+[2026-10-05 21:59:02,642][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-05 21:59:02,644][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-05 21:59:02,644][__main__][INFO] - Instantiating callback <src.callbacks.metrics_csv.MetricsCSV>
+[2026-10-05 21:59:02,647][__main__][INFO] - Instantiating trainer <pytorch_lightning.Trainer>
+[2026-10-05 21:59:02,742][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
+[2026-10-05 21:59:02,884][__main__][INFO] - config.train.ckpt='/system/user/omohamed/charna/dna-xlstm/outputs/full/resume_from_step3000.ckpt' fsspec_exists(config.train.ckpt)=True
+[2026-10-05 21:59:21,638][src.dataloaders.genomics][INFO] - **Using Char-level tokenizer**
+[2026-10-05 21:59:21,742][__main__][INFO] - Custom load_state_dict function is running.
+[2026-10-05 21:59:22,392][__main__][INFO] - Optimizer group 0 | 32 tensors | weight_decay 0.1
+[2026-10-05 21:59:22,392][__main__][INFO] - Optimizer group 1 | 19 tensors | weight_decay 0.0
+[2026-10-05 21:59:23,148][__main__][INFO] - Creating train loader
+[2026-10-05 21:59:23,168][__main__][INFO] - Creating validation loaders
+[2026-10-05 21:59:23,168][__main__][INFO] - ['val', 'test']

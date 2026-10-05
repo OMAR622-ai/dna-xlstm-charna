@@ -189,19 +189,31 @@ runs:
     title: Full pretraining, GBST-BERT (10.5 B bases)
     kind: pretraining
     status: running
-    started: "2026-10-05 05:00 (student01); resumed 2026-10-05 17:21 (student07)"
+    started: "2026-10-05 05:00 (student01); resumed 17:21 and, after the fix, 21:58 (student07)"
     model: "GBST-BERT, final version, LR 2e-3 (best of R09/R13–R15 by validation loss at step 500)"
-    outcome: "First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402. Checkpoints of steps 2,000 and 2,500 saved to charna_project/models/full_charna_mlm/ on 5 Oct 16:52. Moved to student07: stopped on student01 at 17:20 after the step-3,000 checkpoint, resumed on student07 at 17:21 from step 3,000 (all states restored; GPUs 1–4, same batch of 1,024 sequences)."
+    outcome: "First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402 (student01). Moved to student07 at step 3,000 (17:21). Crashed at 18:51 during the step-4,000 validation: the data loader returned an empty sequence. Cause: a bug in the repository's hg38 reader (DataLoader workers shared one open FASTA file and its read position; measured: 0.35% of sequences wrong with 2 workers per GPU as on student01, 13–33% with 12). Fixed (genome file reopened per worker, test added) and resumed from the step-3,000 checkpoint at 21:58 (5 Oct), so steps 3,000–4,000 are redone with correct data."
     purpose: The main run.
     command: MODEL=charna LR=<best> RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh   (from ~/charna/run_full_after_lr.sh)
     results: [pretrain/hg38/full_charna_mlm, full]
+
+  - id: R19_llama_stopped
+    title: Full pretraining, Transformer++, first attempt (stopped)
+    kind: pretraining
+    status: stopped
+    started: "2026-10-05 18:51 (student07)"
+    ended: "2026-10-05 21:56 (stopped)"
+    model: Transformer++-2M, LR 1e-2
+    purpose: The comparison model at full scale (started automatically after R16 crashed).
+    command: MODEL=llama RUN_NAME=full_llama_mlm VAL_EVERY=2000 NUM_DEVICES=4 MICRO_BATCH=32 NUM_WORKERS=4 bash scripts_pretrain/run_pretrain_charna.sh
+    results: [pretrain/hg38/stopped_llama_buggy_loader]
+    outcome: "Stopped at ≈ step 2,500 because it used the buggy data loader with 4 workers per GPU (many wrong sequences). Validation loss at step 2,000: 1.0512 — not used for comparisons. Restarted from scratch as R17 with the fixed loader."
 
   - id: R17_full_llama
     title: Full pretraining, Transformer++ (10.5 B bases)
     kind: pretraining
     status: queued
-    model: Transformer++-2M, LR 1e-2
-    purpose: The comparison model at full scale.
+    model: Transformer++-2M, LR 1e-2, fixed data loader
+    purpose: The comparison model at full scale (from scratch, after R16; replaces R19).
     command: MODEL=llama RUN_NAME=full_llama_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh
     results: [pretrain/hg38/full_llama_mlm, full]
 
@@ -238,3 +250,7 @@ log:
   - {when: "2026-10-05 05:00", what: "Learning-rate check done: 2e-3 best (val 1.1541 at step 500, vs 1.1605 / 1.1869 / 1.1944 for 5e-3 / 1e-3 / 5e-4). Full GBST-BERT run (R16) started automatically with 2e-3."}
   - {when: "2026-10-05 16:52", what: "Saved for moving to a new server: 7 checkpoints (charna_project/models/), Python environment, server queue scripts, moving guide (docs/MOVING_TO_NEW_SERVER.md). Resuming from a checkpoint tested."}
   - {when: "2026-10-05 17:21", what: "Moved to server student07 (same shared home): R16 stopped on student01 after its step-3,000 checkpoint and resumed on student07 (2× RTX 2080 Ti + 2× Quadro GV100), ≈2.5× faster. R17 and R18 queued there."}
+  - {when: "2026-10-05 18:51", what: "R16 crashed at the step-4,000 validation (empty sequence from the data loader); the queue went on to Transformer++ (R19). Queue stopped at 19:00."}
+  - {when: "2026-10-05 19:00–21:50", what: "Cause found and measured: the repository's hg38 reader shared one open FASTA file between DataLoader workers; parallel reads returned wrong bases (0.35% with 2 workers, 13–33% with 12; each split reads its own file, so no leakage between training and test). Evaluation script unaffected (no workers)."}
+  - {when: "2026-10-05 21:56", what: "Fix approved and applied (genome file reopened in each worker; new test: 841/1,024 wrong without the fix, 0 with it; 24/24 tests pass). R19 stopped."}
+  - {when: "2026-10-05 21:58", what: "R16 resumed from its step-3,000 checkpoint with the fixed loader; then R17 (Transformer++ from scratch) and R18 (evaluation) run automatically (scripts_charna/server/run_full_student07_v2.sh)."}

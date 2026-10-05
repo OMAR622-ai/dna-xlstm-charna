@@ -62,7 +62,7 @@ All changes are additive: existing models and default behaviour are unchanged
 | `models/charna/configuration_charna.py` | `CharnaConfig` (defaults = 2M model) |
 | `configs/model/charna.yaml` | Hydra model config (`model=charna`) |
 | `src/dataloaders/utils/ul2.py` | UL2 masking (ChaRNABERT §4.1) adapted to in-place `[MASK]` |
-| `src/dataloaders/datasets/hg38_dataset.py`, `src/dataloaders/genomics.py` | `mlm_strategy: mlm \| ul2` switch (train split only) |
+| `src/dataloaders/datasets/hg38_dataset.py`, `src/dataloaders/genomics.py` | `mlm_strategy: mlm \| ul2` switch (train split only); fix: genome file reopened per DataLoader worker |
 | `src/dataloaders/datasets/nucleotide_transformer_dataset.py` | Fix: load each NT task's own parquet file (see [Known issues](#known-issues)) |
 | `src/models/sequence/dna_embedding.py` | Downstream wrappers `DNAEmbeddingModelCharna` and `DNAEmbeddingModelTransformer` |
 | `src/utils/registry.py` | `charna_lm`, `dna_embedding_charna`, `dna_embedding_llama`, `metrics_csv` |
@@ -377,6 +377,17 @@ which uses gradient checkpointing). Estimated full run: ≈40 h per model includ
 
 ## Known issues
 
+- **hg38 data loading with several workers (repo bug, fixed in this branch on 5 Oct 2026).**
+  `FastaInterval` in `src/dataloaders/datasets/hg38_dataset.py` opened the genome file once; the
+  DataLoader worker processes inherited it and shared its read position, so parallel reads
+  returned bases from the wrong place (and once an empty sequence, which crashed run R16 at step
+  4,000). Measured on the validation split: 0.35% of sequences wrong with 2 workers per GPU (all
+  runs on student01), 13–33% with 12 workers. Training, validation and test each open their own
+  file, so wrong reads stay within their split (no leakage); `evaluate_mlm.py` reads without
+  workers and was not affected. The file is now reopened in each worker process; the test
+  `test_parallel_workers_read_correct_sequences` checks it (841 of 1,024 sequences wrong without
+  the fix, 0 with it). R16 was resumed from its step-3,000 checkpoint with the fix; the
+  Transformer++ run started with the bug (R19) was discarded and restarted (R17).
 - **NT data loading (repo bug, fixed in this branch).** The Hugging Face dataset
   `InstaDeepAI/nucleotide_transformer_downstream_tasks` is now stored as one parquet file per task,
   and the original `load_dataset(..., name=<task>)` silently loaded **all 18 tasks** (461,850

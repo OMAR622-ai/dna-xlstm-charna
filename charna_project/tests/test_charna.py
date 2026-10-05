@@ -257,6 +257,20 @@ class TestHG38Dataset(unittest.TestCase):
             if strategy == "ul2":
                 self.assertTrue(bool((data[target != PAD_ID] == MASK_ID).all()))
 
+    def test_parallel_workers_read_correct_sequences(self):
+        """DataLoader workers must return the same bases as a single process (they used to share
+        one open FASTA file and its read position, which returned bases from the wrong place)."""
+        from torch.utils.data import DataLoader, Subset
+        from src.dataloaders.datasets.hg38_dataset import HG38Dataset
+        ds = HG38Dataset(split="valid", bed_file=HG38_BED, fasta_file=HG38_FASTA, max_length=1024,
+                         mlm=False, tokenizer=TOK, tokenizer_name="char", add_eos=True, rc_aug=False)
+        sub = Subset(ds, list(range(0, len(ds), max(len(ds) // 1024, 1)))[:1024])
+        reference = torch.stack([sub[i][0] for i in range(len(sub))])
+        loader = DataLoader(sub, batch_size=16, num_workers=8)
+        parallel = torch.cat([data for data, _ in loader])
+        self.assertEqual(parallel.shape, reference.shape)
+        self.assertEqual(int((parallel != reference).any(dim=1).sum()), 0)
+
     def test_default_strategy_unchanged(self):
         from src.dataloaders.datasets.hg38_dataset import HG38Dataset
         ds = HG38Dataset(split="valid", bed_file=HG38_BED, fasta_file=HG38_FASTA, max_length=1024,

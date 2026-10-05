@@ -4,7 +4,7 @@
 |---|---|
 | Status | ⏳ running |
 | Kind | pretraining |
-| Started | 2026-10-05 05:00 (student01); resumed 2026-10-05 17:21 (student07) |
+| Started | 2026-10-05 05:00 (student01); resumed 17:21 and, after the fix, 21:58 (student07) |
 | Ended | – |
 | Model | GBST-BERT, final version, LR 2e-3 (best of R09/R13–R15 by validation loss at step 500) |
 
@@ -16,7 +16,7 @@
 MODEL=charna LR=<best> RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh   (from ~/charna/run_full_after_lr.sh)
 ```
 
-**Outcome.** First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402. Checkpoints of steps 2,000 and 2,500 saved to charna_project/models/full_charna_mlm/ on 5 Oct 16:52. Moved to student07: stopped on student01 at 17:20 after the step-3,000 checkpoint, resumed on student07 at 17:21 from step 3,000 (all states restored; GPUs 1–4, same batch of 1,024 sequences).
+**Outcome.** First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402 (student01). Moved to student07 at step 3,000 (17:21). Crashed at 18:51 during the step-4,000 validation: the data loader returned an empty sequence. Cause: a bug in the repository's hg38 reader (DataLoader workers shared one open FASTA file and its read position; measured: 0.35% of sequences wrong with 2 workers per GPU as on student01, 13–33% with 12). Fixed (genome file reopened per worker, test added) and resumed from the step-3,000 checkpoint at 21:58 (5 Oct), so steps 3,000–4,000 are redone with correct data.
 
 ## Settings (from the run's `config.json`)
 

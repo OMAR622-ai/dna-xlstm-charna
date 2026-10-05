@@ -21,7 +21,8 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | [R13_lr_1e-3](R13_lr_1e-3.md) | Learning-rate check, GBST-BERT LR 1e-3 | ✅ done | 2026-10-04 22:10 | Validation loss at step 500: 1.1869 (5e-4 run: 1.1944). |
 | [R14_lr_2e-3](R14_lr_2e-3.md) | Learning-rate check, GBST-BERT LR 2e-3 | ✅ done | 2026-10-05 00:23 | Best of the four: validation loss at step 500 1.1541 (test 1.1380). |
 | [R15_lr_5e-3](R15_lr_5e-3.md) | Learning-rate check, GBST-BERT LR 5e-3 | ✅ done | 2026-10-05 02:41 | Validation loss at step 500: 1.1605, second best. |
-| [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ⏳ running | 2026-10-05 05:00 (student01); resumed 2026-10-05 17:21 (student07) | First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402. |
+| [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ⏳ running | 2026-10-05 05:00 (student01); resumed 17:21 and, after the fix, 21:58 (student07) | First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402 (student01). |
+| [R19_llama_stopped](R19_llama_stopped.md) | Full pretraining, Transformer++, first attempt (stopped) | ⏹ stopped | 2026-10-05 18:51 (student07) | Stopped at ≈ step 2,500 because it used the buggy data loader with 4 workers per GPU (many wrong sequences). |
 | [R17_full_llama](R17_full_llama.md) | Full pretraining, Transformer++ (10.5 B bases) | 🕒 queued | – | – |
 | [R18_eval_full](R18_eval_full.md) | Accuracy of the full models | 🕒 queued | – | – |
 
@@ -51,6 +52,10 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-05 05:00 | Learning-rate check done: 2e-3 best (val 1.1541 at step 500, vs 1.1605 / 1.1869 / 1.1944 for 5e-3 / 1e-3 / 5e-4). Full GBST-BERT run (R16) started automatically with 2e-3. |
 | 2026-10-05 16:52 | Saved for moving to a new server: 7 checkpoints (charna_project/models/), Python environment, server queue scripts, moving guide (docs/MOVING_TO_NEW_SERVER.md). Resuming from a checkpoint tested. |
 | 2026-10-05 17:21 | Moved to server student07 (same shared home): R16 stopped on student01 after its step-3,000 checkpoint and resumed on student07 (2× RTX 2080 Ti + 2× Quadro GV100), ≈2.5× faster. R17 and R18 queued there. |
+| 2026-10-05 18:51 | R16 crashed at the step-4,000 validation (empty sequence from the data loader); the queue went on to Transformer++ (R19). Queue stopped at 19:00. |
+| 2026-10-05 19:00–21:50 | Cause found and measured: the repository's hg38 reader shared one open FASTA file between DataLoader workers; parallel reads returned wrong bases (0.35% with 2 workers, 13–33% with 12; each split reads its own file, so no leakage between training and test). Evaluation script unaffected (no workers). |
+| 2026-10-05 21:56 | Fix approved and applied (genome file reopened in each worker; new test: 841/1,024 wrong without the fix, 0 with it; 24/24 tests pass). R19 stopped. |
+| 2026-10-05 21:58 | R16 resumed from its step-3,000 checkpoint with the fixed loader; then R17 (Transformer++ from scratch) and R18 (evaluation) run automatically (scripts_charna/server/run_full_student07_v2.sh). |
 
 ## Code changes (git commits on this branch)
 
@@ -98,3 +103,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-05 16:56 | `384afc8` | Prepare moving to a new server: guide, server queue scripts |
 | 2026-10-05 16:56 | `bd2960a` | Save trained models (7 checkpoints), Python environment and latest results |
 | 2026-10-05 17:35 | `a967e39` | Move training to student07: R16 resumed there from its step-3,000 checkpoint |
+| 2026-10-05 17:35 | `e6b38d4` | charna_project: run pages and results after the move to student07 |
+| 2026-10-05 18:34 | `3412280` | Add 50 questions and short answers about the project |
+| 2026-10-05 18:34 | `42f3a79` | Rebuild charna_project/ |
+| 2026-10-05 22:06 | `5430375` | Fix hg38 reader: reopen the genome file in each DataLoader worker |

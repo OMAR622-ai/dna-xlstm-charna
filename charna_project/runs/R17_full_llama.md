@@ -6,9 +6,9 @@
 | Kind | pretraining |
 | Started | – |
 | Ended | – |
-| Model | Transformer++-2M, LR 1e-2 |
+| Model | Transformer++-2M, LR 1e-2, fixed data loader |
 
-**Purpose.** The comparison model at full scale.
+**Purpose.** The comparison model at full scale (from scratch, after R16; replaces R19).
 
 **Command.**
 

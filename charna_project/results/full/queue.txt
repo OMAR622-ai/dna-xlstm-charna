@@ -3,3 +3,8 @@
 2026-10-05 17:20:12 [student01] checkpoint at step 3000 saved; stopping the run here to continue on student07
 2026-10-05 17:20:24 [student01] stopped; last checkpoint step 3000
 2026-10-05 17:21:52 [student07] resume full pretrain charna (LR 2e-3) from step 3000 on GPUs 1,2,3,4
+2026-10-05 18:51:37 [student07] end full pretrain charna exit=137
+2026-10-05 18:51:37 [student07] start full pretrain llama (LR 1e-2)
+2026-10-05 19:00:05 [student07] queue script stopped after R16 crash at step 4000 (empty sequence from the data loader); R17 llama training left running
+2026-10-05 21:56:13 [student07] R17 stopped at ~step 2,500 (buggy data loader); archived as stopped_llama_buggy_loader. Data-loader fix (FASTA reopened per worker) applied.
+2026-10-05 21:58:46 [student07] resume full pretrain charna (LR 2e-3) from step 3000, fixed data loader, GPUs 1,2,3,4
