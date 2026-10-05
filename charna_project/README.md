@@ -12,6 +12,9 @@ The full project documentation is the repository's main [README.md](../README.md
 - **Data** (`datasets/`): kept only here.
 - **Results** (`results/`): kept only here, copied from the server's `outputs/` with
   `bash scripts_charna/collect_results.sh`.
+- **Models** (`models/`): checkpoints of the trained models (≈25 MB each, resumable); see
+  [models/README.md](models/README.md).
+- **Environment** (`environment/`): the exact Python packages used on the training server.
 - **Runs** (`runs/`): one page per run (purpose, exact command, settings read from the run's
   config, results, files) and a log of every project step; see [runs/README.md](runs/README.md).
   Generated from `runs/runs.yaml` and `results/` by `python scripts_charna/make_run_cards.py`.

@@ -21,7 +21,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | [R13_lr_1e-3](R13_lr_1e-3.md) | Learning-rate check, GBST-BERT LR 1e-3 | ✅ done | 2026-10-04 22:10 | Validation loss at step 500: 1.1869 (5e-4 run: 1.1944). |
 | [R14_lr_2e-3](R14_lr_2e-3.md) | Learning-rate check, GBST-BERT LR 2e-3 | ✅ done | 2026-10-05 00:23 | Best of the four: validation loss at step 500 1.1541 (test 1.1380). |
 | [R15_lr_5e-3](R15_lr_5e-3.md) | Learning-rate check, GBST-BERT LR 5e-3 | ✅ done | 2026-10-05 02:41 | Validation loss at step 500: 1.1605, second best. |
-| [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ⏳ running | 2026-10-05 05:00 | – |
+| [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ⏳ running | 2026-10-05 05:00 | First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402. |
 | [R17_full_llama](R17_full_llama.md) | Full pretraining, Transformer++ (10.5 B bases) | 🕒 queued | – | – |
 | [R18_eval_full](R18_eval_full.md) | Accuracy of the full models | 🕒 queued | – | – |
 
@@ -49,6 +49,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-04 22:30 | Learning-rate check (R13–R15) running; full runs (R16–R18) queued to start automatically after it. |
 | 2026-10-04 22:40 | Every run documented: one page per run (charna_project/runs/), settings and logs of all runs collected. |
 | 2026-10-05 05:00 | Learning-rate check done: 2e-3 best (val 1.1541 at step 500, vs 1.1605 / 1.1869 / 1.1944 for 5e-3 / 1e-3 / 5e-4). Full GBST-BERT run (R16) started automatically with 2e-3. |
+| 2026-10-05 16:52 | Saved for moving to a new server: 7 checkpoints (charna_project/models/), Python environment, server queue scripts, moving guide (docs/MOVING_TO_NEW_SERVER.md). Resuming from a checkpoint tested. |
 
 ## Code changes (git commits on this branch)
 
@@ -92,3 +93,5 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-04 22:50 | `dba5c1c` | Run status 4 Oct 22:43: R13 (LR 1e-3) step 100 |
 | 2026-10-05 05:08 | `f0235da` | Learning-rate check done: 2e-3 best for GBST-BERT; full run R16 started with it |
 | 2026-10-05 05:08 | `0742db0` | Rebuild charna_project/ |
+| 2026-10-05 16:46 | `dfc74dd` | Run status 5 Oct 16:39: R16 first validation point (2.1B bases, val 1.0559) |
+| 2026-10-05 16:56 | `384afc8` | Prepare moving to a new server: guide, server queue scripts |

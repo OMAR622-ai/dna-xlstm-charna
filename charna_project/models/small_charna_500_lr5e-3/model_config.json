@@ -1,0 +1,25 @@
+{
+    "config": {
+        "_target_": "models.charna.configuration_charna.CharnaConfig",
+        "d_model": 256,
+        "n_layer": 4,
+        "n_heads": 8,
+        "hidden_dim": 320,
+        "vocab_size": 12,
+        "max_length": 1024,
+        "norm_type": "layernorm",
+        "norm_eps": 1e-05,
+        "qk_norm": true,
+        "rope_theta": 10000.0,
+        "dropout": 0.0,
+        "tokenizer": "gbst",
+        "gbst_max_block_size": 4,
+        "gbst_offsets": true,
+        "gbst_pooling": "sum",
+        "gbst_conv_kernel_size": null,
+        "gbst_pointwise_conv": true,
+        "gbst_score_calibration": true,
+        "downsample_rate": 1,
+        "gradient_checkpointing": false
+    }
+}

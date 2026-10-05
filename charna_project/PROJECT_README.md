@@ -12,6 +12,8 @@ results are directly comparable with the Bio-xLSTM paper.
 | | |
 |---|---|
 | Everything in one folder (code, data, results) | [`charna_project/`](./) |
+| **Trained models** (checkpoints, resumable) | [`charna_project/models/`](models/README.md) |
+| **Moving to a new server** (setup, continue training) | [`docs/MOVING_TO_NEW_SERVER.md`](../docs/MOVING_TO_NEW_SERVER.md) |
 | **Every run, one page each** (settings, command, results, files) and the project log | [`charna_project/runs/`](runs/README.md) |
 | Results of the runs | [`charna_project/results/`](results/) |
 | Data (interval list, hg38 sample, download script) | [`charna_project/datasets/`](datasets/), [`scripts_charna/download_data.sh`](../scripts_charna/download_data.sh) |

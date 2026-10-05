@@ -16,6 +16,8 @@
 MODEL=charna LR=<best> RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh   (from ~/charna/run_full_after_lr.sh)
 ```
 
+**Outcome.** First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402. Checkpoints of steps 2,000 and 2,500 saved to charna_project/models/full_charna_mlm/ on 5 Oct 16:52 (moving to a new server); the run kept training on student01.
+
 ## Settings (from the run's `config.json`)
 
 | Setting | Value |
