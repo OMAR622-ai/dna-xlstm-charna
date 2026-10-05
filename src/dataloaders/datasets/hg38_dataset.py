@@ -3,6 +3,7 @@
 """
 
 import math
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -28,7 +29,9 @@ class FastaInterval:
         fasta_file = Path(fasta_file)
         assert fasta_file.exists(), "Path to fasta file must exist!"
 
-        self.seqs = Fasta(str(fasta_file))
+        self.fasta_file = str(fasta_file)
+        self.seqs = Fasta(self.fasta_file)
+        self._pid = os.getpid()
         self.return_seq_indices = return_seq_indices
         self.rc_aug = rc_aug
 
@@ -60,6 +63,12 @@ class FastaInterval:
         """
         max_length passed from dataset, not from init
         """
+        # DataLoader workers are forked processes that would share the parent's open file and
+        # its read position; concurrent reads then return bases from the wrong place (or nothing).
+        # Each process therefore reads through its own file handle.
+        if self._pid != os.getpid():
+            self.seqs = Fasta(self.fasta_file)
+            self._pid = os.getpid()
         chromosome = self.seqs[chr_name]
         chromosome_length = self.chr_lens[chr_name]
 
