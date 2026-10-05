@@ -42,6 +42,7 @@ Loss in nats per hidden base; 1.386 = random guess among A/C/G/T.
 | Step | Bases seen | Validation loss | Test loss |
 |---|---|---|---|
 | 2000 | 2.097 B | 1.0559 | 1.0402 |
+| 4001 | 4.195 B | 1.0014 | 0.9929 |
 
 ## Files
 

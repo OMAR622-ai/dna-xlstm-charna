@@ -107,3 +107,4 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-05 18:34 | `3412280` | Add 50 questions and short answers about the project |
 | 2026-10-05 18:34 | `42f3a79` | Rebuild charna_project/ |
 | 2026-10-05 22:06 | `5430375` | Fix hg38 reader: reopen the genome file in each DataLoader worker |
+| 2026-10-05 22:06 | `5742140` | Run pages: R16 crash, data-loader fix, restart; R19 stopped |
