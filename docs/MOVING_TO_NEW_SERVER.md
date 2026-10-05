@@ -1,5 +1,15 @@
 # Moving the project to a new server
 
+> **Done on 5 Oct 2026: moved from student01 to student07.** Both JKU servers share the same
+> home directory, so code, data, environment and results were already on student07; only the
+> training was moved. `scripts_charna/server/stop_on_ckpt.sh` (on student01) waited for the
+> step-3,000 checkpoint of the full GBST-BERT run and stopped the run at 17:20 CEST;
+> `scripts_charna/server/run_full_student07.sh` resumed it at 17:21 on student07 (GPUs 1–4:
+> 2× RTX 2080 Ti + 2× Quadro GV100; same global batch of 1,024 sequences) and then runs
+> Transformer++ and the final evaluation. The log confirms "Restored all states" at step 3,000;
+> speed ≈0.72 s per micro-batch (≈2.5× faster than on student01). The sections below are the
+> general guide for a server that does **not** share the home directory.
+
 Everything needed to continue the project on another machine is on GitHub (branch
 `charna-gbst` of `OMAR622-ai/dna-xlstm-charna`), except the large public data, which is
 downloaded by a script. Saved on 5 October 2026.
