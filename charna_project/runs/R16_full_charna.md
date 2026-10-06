@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Status | ⏳ running |
+| Status | ✅ done |
 | Kind | pretraining |
 | Started | 2026-10-05 05:00 (student01); resumed 17:21 and, after the fix, 21:58 (student07) |
-| Ended | – |
+| Ended | 2026-10-06 08:31 |
 | Model | GBST-BERT, final version, LR 2e-3 (best of R09/R13–R15 by validation loss at step 500) |
 
 **Purpose.** The main run.
@@ -16,7 +16,7 @@
 MODEL=charna LR=<best> RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh   (from ~/charna/run_full_after_lr.sh)
 ```
 
-**Outcome.** First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402 (student01). Moved to student07 at step 3,000 (17:21). Crashed at 18:51 during the step-4,000 validation: the data loader returned an empty sequence. Cause: a bug in the repository's hg38 reader (DataLoader workers shared one open FASTA file and its read position; measured: 0.35% of sequences wrong with 2 workers per GPU as on student01, 13–33% with 12). Fixed (genome file reopened per worker, test added) and resumed from the step-3,000 checkpoint at 21:58 (5 Oct), so steps 3,000–4,000 are redone with correct data.
+**Outcome.** First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402 (student01). Moved to student07 at step 3,000 (17:21). Crashed at 18:51 during the step-4,000 validation: the data loader returned an empty sequence. Cause: a bug in the repository's hg38 reader (DataLoader workers shared one open FASTA file and its read position; measured: 0.35% of sequences wrong with 2 workers per GPU as on student01, 13–33% with 12). Fixed (genome file reopened per worker, test added) and resumed from the step-3,000 checkpoint at 21:58 (5 Oct), so steps 3,000–4,000 are redone with correct data. Finished at 08:31 on 6 Oct (exit 0): validation loss 1.0014 (step 4,000), 0.9853 (6,000), 0.9765 (8,000); the step-10,000 validation was not run (after resuming, Lightning counts one step ahead, so the scheduled check fell on step 10,001); final model saved as charna_project/models/full_charna_mlm/final_step10000.ckpt and measured with evaluate_mlm.py (R18).
 
 ## Settings (from the run's `config.json`)
 
@@ -44,6 +44,7 @@ Loss in nats per hidden base; 1.386 = random guess among A/C/G/T.
 | 2000 | 2.097 B | 1.0559 | 1.0402 |
 | 4001 | 4.195 B | 1.0014 | 0.9929 |
 | 6001 | 6.293 B | 0.9853 | 0.9783 |
+| 8001 | 8.390 B | 0.9765 | 0.9703 |
 
 ## Files
 
@@ -51,6 +52,8 @@ Loss in nats per hidden base; 1.386 = random guess among A/C/G/T.
 - [`results/pretrain/hg38/full_charna_mlm/metrics.csv`](../results/pretrain/hg38/full_charna_mlm/metrics.csv)
 - [`results/pretrain/hg38/full_charna_mlm/model_config.json`](../results/pretrain/hg38/full_charna_mlm/model_config.json)
 - [`results/pretrain/hg38/full_charna_mlm/train.log`](../results/pretrain/hg38/full_charna_mlm/train.log)
+- [`results/full/eval_charna_only/eval_valid.csv`](../results/full/eval_charna_only/eval_valid.csv)
+- [`results/full/eval_charna_only/eval_valid.md`](../results/full/eval_charna_only/eval_valid.md)
 - [`results/full/queue.txt`](../results/full/queue.txt)
 - [`results/full/stopped/queue.txt`](../results/full/stopped/queue.txt)
 - [`results/full/stopped2/queue.txt`](../results/full/stopped2/queue.txt)
