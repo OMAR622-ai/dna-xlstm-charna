@@ -335,6 +335,24 @@ Reading the results:
 Next: a learning-rate check for GBST-BERT (1e-3, 2e-3, 5e-3; 500 steps each, chosen by
 validation loss), then the full 10.5B-base runs.
 
+## What GBST learned
+
+`scripts_charna/analyze_gbst_weights.py` measures how much weight GBST gives to blocks of 1, 2, 3
+and 4 bases (average over 8 hg38 sequences from different chromosomes, 15% of the bases masked):
+
+| Model | blocks of 1 / 2 / 3 / 4 bases |
+|---|---|
+| small run, LR 5e-4, step 500 | 72% / 22% / 5% / 1% |
+| small run, LR 2e-3, step 500 | 98% / 2% / 0% / 0% |
+| full run, step 2,000 | 99.8% / 0.1% / 0% / 0% |
+| **final model, step 10,000** | **98% / 2% / 0% / 0%** |
+
+On human DNA, GBST learned to put almost all weight on single bases (score calibration, Eq. 6,
+hardly changes this); the bases still see their neighbours through the convolution before the
+blocks (kernel 4). GBST-BERT therefore behaves close to a model reading one base at a time, which
+fits the small difference to Transformer++. `scripts_charna/demo_predict.py` loads the final model,
+hides bases in a sequence and prints the guesses and the block weights.
+
 ## Learning-rate check
 
 ChaRNABERT's learning rate (5e-4, Table 2) comes from an RNA model trained with a different

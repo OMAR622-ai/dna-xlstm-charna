@@ -114,3 +114,6 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-05 23:49 | `20feff4` | Run status 5 Oct 23:41: R16 step 4,000 validation 1.0014 (test 0.9929) |
 | 2026-10-06 05:32 | `01f50af` | Run status 6 Oct 05:23: R16 step 6,000 validation 0.9853 (test 0.9783) |
 | 2026-10-06 15:17 | `08a03b3` | GBST-BERT full run finished (step 10,000): final model, run pages; Transformer++ running |
+| 2026-10-06 15:20 | `2b30e29` | README: GBST-BERT full run results (test accuracy 56.44%, loss 0.9753) |
+| 2026-10-06 15:20 | `83506fc` | Final GBST-BERT evaluation (R20) |
+| 2026-10-06 15:29 | `a8b78b8` | What GBST learned: ~98% weight on single-base blocks; demo and analysis scripts |
