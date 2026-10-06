@@ -7,7 +7,8 @@ from it. `model_config.json` next to it describes the model (needed to rebuild i
 
 | Folder / file | Run | Model | Training step (bases seen) | Validation loss at that step | md5 (first 12) |
 |---|---|---|---|---|---|
-| **`full_charna_mlm/final_step10000.ckpt`** | [R16](../runs/R16_full_charna.md) full run, **final model** | GBST-BERT, LR 2e-3 | **10,000 (10.5 B)** | step 8,000: 0.9765 (final: see R18) | `8e91f91a3a86` |
+| **`full_charna_mlm/final_step10000.ckpt`** | [R16](../runs/R16_full_charna.md) full run, **final model** | GBST-BERT, LR 2e-3 | **10,000 (10.5 B)** | step 8,000: 0.9765 (final: see [R18](../runs/R18_eval_full.md)) | `8e91f91a3a86` |
+| **`full_llama_mlm/final_step10000.ckpt`** | [R17](../runs/R17_full_llama.md) full run, **final model** | Transformer++-2M, LR 1e-2 | **10,000 (10.5 B)** | 0.9755 (test 0.9686) | `8020840dad0c` |
 | `full_charna_mlm/last.ckpt` | R16, copy taken before moving servers | GBST-BERT, LR 2e-3 | 2,500 (2.6 B) | not measured at this step | `8dd49cd8e709` |
 | `full_charna_mlm/best_test_loss.ckpt` | R16 | GBST-BERT, LR 2e-3 | 2,000 (2.1 B) | 1.0559 (test 1.0402) | `b2a163855865` |
 | `small_charna_500_lr2e-3/last.ckpt` | [R14](../runs/R14_lr_2e-3.md) | GBST-BERT, LR 2e-3 | 500 (0.52 B) | 1.1541 | `869420a6f1ce` |

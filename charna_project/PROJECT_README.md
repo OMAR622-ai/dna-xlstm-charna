@@ -41,7 +41,7 @@ Papers used (all hyperparameters below cite one of them):
 | Smoke run (50M tokens, both models) | done, see [Smoke run](#smoke-run-50m-tokens) |
 | Small experiment (≈0.5B tokens, both models, accuracy + loss curve) | **done** (4 Oct 2026, 22:05 CEST), see [Small experiment](#small-experiment-05b-tokens): both ≈44% masked-base accuracy, GBST-BERT very slightly ahead |
 | Learning-rate check (GBST-BERT, 1e-3 / 2e-3 / 5e-3, 500 steps each) | **done** (5 Oct 2026, 05:00): **2e-3 best**, see [Learning-rate check](#learning-rate-check) |
-| Full pretraining (10.5B tokens, both models) | **GBST-BERT done** (6 Oct 08:31): test loss **0.9753**, test accuracy **56.44%** ([R16](runs/R16_full_charna.md), [R20](runs/R20_eval_charna_final.md)). **Transformer++ running** since 6 Oct 08:31 ([R17](runs/R17_full_llama.md)); final comparison (R18) follows automatically |
+| Full pretraining (10.5B tokens, both models) | **done** (6 Oct 2026, 23:27). See [Final results](#final-results) |
 | NT benchmark (18 tasks) | pipeline ready and tested end to end; waits for the full pretraining |
 | Ablations (d_s, MLM vs UL2, RC aug, GBST vs embedding) | not started |
 
@@ -334,6 +334,48 @@ Reading the results:
 
 Next: a learning-rate check for GBST-BERT (1e-3, 2e-3, 5e-3; 500 steps each, chosen by
 validation loss), then the full 10.5B-base runs.
+
+## Final results
+
+Both models pretrained on 10.5 billion bases of hg38 (10,000 steps, Bio-xLSTM protocol), then
+evaluated on the same 2,048 held-out sequences with identical masks (`evaluate_mlm.py`, run R18).
+
+![Validation loss during the full runs](results/full_val_loss.png)
+
+| Model | Test loss | **Test accuracy** | A | C | G | T | Validation loss / accuracy |
+|---|---|---|---|---|---|---|---|
+| **GBST-BERT** (LR 2e-3) | **0.9753** | **56.44%** | 61.8% | 48.5% | 48.8% | 62.1% | 0.9689 / 56.80% |
+| Transformer++-2M (LR 1e-2) | 0.9774 | 56.33% | 61.3% | 48.9% | 48.9% | 61.9% | 0.9728 / 56.65% |
+| Random guess | 1.3863 | 25.00% | | | | | |
+| Always the most common base | – | 29.42% | | | | | 29.97% |
+
+Validation loss during training (12.5% of the validation set):
+
+| Step | Bases seen | GBST-BERT | Transformer++ |
+|---|---|---|---|
+| 2,000 | 2.1 B | 1.0559 | 1.0516 |
+| 4,000 | 4.2 B | 1.0014 | 1.0153 |
+| 6,000 | 6.3 B | 0.9853 | 0.9963 |
+| 8,000 | 8.4 B | 0.9765 | 0.9823 |
+| 10,000 | 10.5 B | – (*) | 0.9755 |
+
+(*) GBST-BERT was resumed twice; after resuming, Lightning counts one step ahead, so the scheduled
+validation fell on step 10,001 and was not run. Its final loss is measured in the table above.
+
+**Conclusions**
+- Both models learned human DNA well: 56% of hidden bases correct (random 25%, most common base
+  29%), test loss ≈0.975, within the range of the published 2M models (≈0.96–1.03, Bio-xLSTM Fig. 2).
+- GBST-BERT is ahead during most of the training (by 0.006–0.014 in validation loss at steps
+  4,000–8,000) and very slightly at the end (0.1 percentage points accuracy, 0.002 loss on test and
+  validation). With one training run per model this final difference is too small to call GBST
+  better.
+- GBST learned to put ≈98% of its weight on single-base blocks (see below): on human DNA, the
+  learned tokenizer behaves almost like reading one base at a time, which explains why the two
+  models end so close.
+- Caveats: the learning rate was tuned for GBST-BERT but not for Transformer++; the models also
+  differ in normalization (LayerNorm + QKNorm vs RMSNorm); GBST-BERT's first 3,000 steps used the
+  data loader before the worker fix (0.35% wrong sequences, same split). A clean ablation (the same
+  model with `TOKENIZER=embedding`) would isolate the effect of GBST.
 
 ## What GBST learned
 

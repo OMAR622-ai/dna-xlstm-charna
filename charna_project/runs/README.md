@@ -24,8 +24,8 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ✅ done | 2026-10-05 05:00 (student01); resumed 17:21 and, after the fix, 21:58 (student07) | First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402 (student01). |
 | [R20_eval_charna_final](R20_eval_charna_final.md) | Accuracy of the final GBST-BERT model | ✅ done | 2026-10-06 ≈14:00 | Final GBST-BERT on test DNA: loss 0.9753, accuracy 56.44% (A 61.8%, C 48.5%, G 48.8%, T 62.1%); validation: 0.9689, 56.80%. |
 | [R19_llama_stopped](R19_llama_stopped.md) | Full pretraining, Transformer++, first attempt (stopped) | ⏹ stopped | 2026-10-05 18:51 (student07) | Stopped at ≈ step 2,500 because it used the buggy data loader with 4 workers per GPU (many wrong sequences). |
-| [R17_full_llama](R17_full_llama.md) | Full pretraining, Transformer++ (10.5 B bases) | ⏳ running | 2026-10-06 08:31 (student07) | – |
-| [R18_eval_full](R18_eval_full.md) | Accuracy of the full models | 🕒 queued | – | – |
+| [R17_full_llama](R17_full_llama.md) | Full pretraining, Transformer++ (10.5 B bases) | ✅ done | 2026-10-06 08:31 (student07) | Validation loss 1.0516 (step 2,000), 1.0153 (4,000), 0.9963 (6,000), 0.9823 (8,000), 0.9755 (10,000; test 0.9686). |
+| [R18_eval_full](R18_eval_full.md) | Accuracy of the full models | ✅ done | 2026-10-06 23:26 | Test (2,048 sequences, 311,767 hidden bases): GBST-BERT loss 0.9753, accuracy 56.44%; Transformer++ 0.9774, 56.33%. |
 
 ## Project log (steps that are not runs)
 
@@ -60,6 +60,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-06 08:31 | Full GBST-BERT run (R16) finished: validation loss 0.9765 at step 8,000 (8.4 B bases). Transformer++ full run (R17) started automatically. |
 | 2026-10-06 14:50 | Final GBST-BERT model measured (R20): test accuracy 56.44%, loss 0.9753. |
 | 2026-10-06 15:30 | Finding: GBST learned to put about 98% of its weight on single-base blocks (final model; 72% after 500 steps at LR 5e-4, 98-99.8% at LR 2e-3). Scripts demo_predict.py and analyze_gbst_weights.py added; model code copied to the workspace folder charna_model_code/. |
+| 2026-10-06 23:27 | All runs done. Final comparison (R18, test): GBST-BERT 56.44% / loss 0.9753 vs Transformer++ 56.33% / 0.9774. |
 
 ## Code changes (git commits on this branch)
 
@@ -119,3 +120,5 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-06 15:20 | `83506fc` | Final GBST-BERT evaluation (R20) |
 | 2026-10-06 15:29 | `a8b78b8` | What GBST learned: ~98% weight on single-base blocks; demo and analysis scripts |
 | 2026-10-06 15:29 | `e598897` | Rebuild charna_project/, project log |
+| 2026-10-06 15:30 | `9fe800d` | Project log: GBST weight finding |
+| 2026-10-07 00:03 | `d9d9285` | Final results: GBST-BERT 56.44% / 0.9753 vs Transformer++ 56.33% / 0.9774 (test); report updated |

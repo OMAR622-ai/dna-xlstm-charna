@@ -26,30 +26,33 @@
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{\small GBST + BERT on human DNA}
-\rhead{\small Progress report, 4 October 2026}
+\rhead{\small Report, 7 October 2026}
 \cfoot{\small\thepage}
 
 \newcommand{\code}[1]{\texttt{\small #1}}
 
 \begin{document}
+\sloppy
 
 \begin{center}
 {\LARGE\bfseries\color{accent} A ChaRNABERT-style model for human DNA}\\[6pt]
 {\large GBST tokenization + bidirectional BERT encoder, on the DNA-xLSTM code base}\\[10pt]
-Progress report \quad$\cdot$\quad Omar R.A Mohamed \quad$\cdot$\quad 4 October 2026, 22:30 CEST\\[4pt]
+Report \quad$\cdot$\quad Omar R.A Mohamed \quad$\cdot$\quad 7 October 2026\\[4pt]
 Code: \url{https://github.com/OMAR622-ai/dna-xlstm-charna} (branch \code{charna-gbst}, private)
 \end{center}
 
 \vspace{4pt}
 \noindent\colorbox{soft}{\parbox{\dimexpr\linewidth-2\fboxsep}{
 \textbf{Summary.} The ChaRNABERT architecture --- a learnable tokenizer (GBST) in front of a
-bidirectional BERT encoder --- was implemented in the DNA-xLSTM code base, tested (23 automatic
-tests pass) and adapted to human DNA (hg38). In a small experiment (0.5 billion bases, 5\% of
-the planned training) it learned to predict hidden bases with \textbf{43.9\% accuracy} on unseen
-test DNA (random guessing: 25\%; always guessing the most common base: 29.4\%), with a loss of
-1.194. A same-size comparison model without GBST (Transformer++) reached 43.8\% and 1.196: it
-learned faster at first, GBST-BERT caught up and ends very slightly ahead --- too small a
-difference to call a winner after one short run each. No benchmark (downstream task) results yet.
+bidirectional BERT encoder --- was implemented in the DNA-xLSTM code base, tested (24 automatic
+tests) and trained on 10.5 billion bases of the human genome (hg38) with the DNA-xLSTM protocol.
+On unseen test DNA, the final model guesses \textbf{56.4\%} of hidden bases correctly (random
+guessing 25\%, always the most common base 29.4\%), with a loss of \textbf{0.975} --- in the range
+of the published 2\,M DNA models. A same-size model without GBST (Transformer++) reached 56.3\% and
+0.977: GBST-BERT was ahead during most of the training but only 0.1 percentage points at the end,
+too little to call GBST better after one run each. Inside the model, GBST learned to put about
+98\% of its weight on single bases, so on human DNA it behaves almost like reading one base at a
+time. No benchmark (downstream task) results yet.
 }}
 
 \tableofcontents
@@ -63,7 +66,7 @@ The project asks whether a \emph{learned} way of reading DNA helps a small model
 genome with the short-context protocol of the DNA-xLSTM paper (Schmidinger et al., 2024), and
 compare it with models from that paper. The plan has three parts: (1) pretraining on hg38 with
 masked language modelling; (2) evaluation on held-out DNA (accuracy and loss); (3) later, the
-18-task Nucleotide Transformer (NT) benchmark. Parts (1)--(2) are running; part (3) is ready but
+18-task Nucleotide Transformer (NT) benchmark. Parts (1)--(2) are done; part (3) is ready but
 postponed.
 
 % ------------------------------------------------------------------------------------------
@@ -220,12 +223,20 @@ Later tasks & BEACON RNA benchmark & Nucleotide Transformer DNA benchmark \\
   of e.g.\ 5,509) --- a bug in the original repository caused by a change on Hugging Face; (c) a
   results file wrote values under wrong column names; (d) the GitHub genome sample first held
   only 1/8 of each region; (e) smaller script issues (wrong exit status in a log, a path error).
-\item \textbf{Small experiment} (running since 16:20 CEST): both models trained for 500 steps
+\item \textbf{Small experiment} (4 October): both models trained for 500 steps
   ($\approx$0.5 billion bases); then accuracy evaluation on 2,048 held-out sequences. The
-  40-hour full run was stopped to get results sooner; the benchmark was postponed.
+  first full run was stopped to get results sooner; the benchmark was postponed.
+\item \textbf{Learning-rate check} (4--5 October): four short GBST-BERT runs; 2e-3 was best.
+\item \textbf{Full training} (5--6 October): GBST-BERT with 2e-3, then Transformer++, 10,000 steps
+  each; moved from server student01 to student07 (faster GPUs, same files) at step 3,000.
+\item \textbf{Data-loading bug} (5 October): found after a crash, measured, fixed with a test;
+  GBST-BERT resumed from step 3,000, Transformer++ restarted.
+\item \textbf{Final evaluation and analysis} (6 October): accuracy of both final models; what
+  block sizes GBST uses; all models saved on GitHub.
 \item \textbf{Documentation and GitHub}: project README (front page), a beginner's explanation
-  (\code{docs/EXPLAINED.md}), everything collected in one folder (\code{charna\_project/}: code,
-  data that fits in git, results), and this report.
+  (\code{docs/EXPLAINED.md}), 50 questions and answers (\code{docs/QA\_50.md}), one page per run
+  (\code{charna\_project/runs/}), everything in one folder (\code{charna\_project/}: code, data
+  that fits in git, models, results), and this report.
 \end{enumerate}
 
 \textbf{Main settings} (all for GBST-BERT; source in brackets):
@@ -236,7 +247,7 @@ Model & 256 numbers per base, 4 encoder blocks, 8 attention heads, 2,107,392 par
 GBST & blocks of 1--4 bases with offsets, sum pooling, calibration, no shortening [ChaRNABERT \S3.2] \\
 Masking & 15\% of bases; of these 80\% \code{[MASK]}, 10\% random, 10\% unchanged [Bio-xLSTM App.~C.5] \\
 Batch & 1,024 sequences $\times$ 1,024 bases = 1,048,576 bases per step [Bio-xLSTM App.~C.5] \\
-Learning rate & 5e-4 [ChaRNABERT Table 2]; warmup 10\% of steps, cosine decay [Bio-xLSTM Table A4] \\
+Learning rate & 2e-3, best of 5e-4 [ChaRNABERT Table 2], 1e-3, 2e-3, 5e-3 in a short check; warmup 10\% of steps, cosine decay [Bio-xLSTM Table A4] \\
 Optimizer & AdamW, $\beta=(0.9, 0.95)$, weight decay 0.1 [Bio-xLSTM Table A4] \\
 Length of training & small experiment 500 steps (0.5 B bases); full run 10,000 steps (10.5 B) \\
 Comparison model & Transformer++-2M, learning rate 1e-2 [Bio-xLSTM Table A3] \\
@@ -245,7 +256,7 @@ Comparison model & Transformer++-2M, learning rate 1e-2 [Bio-xLSTM Table A3] \\
 \end{center}
 
 % ------------------------------------------------------------------------------------------
-\section{Results so far}
+\section{Results}
 \label{sec:results}
 
 \textbf{Automatic tests: 23 of 23 pass.} They check, among others, that GBST matches a slow
@@ -337,8 +348,81 @@ Always ``A'' (most common) & -- & 29.42\% (29.97\%) & & & & \\
   2--10 billion bases (Bio-xLSTM Fig.~2). Both curves here are still falling at 0.5 billion bases.
 \end{itemize}
 
-\textbf{Not done yet:} the full 10.5-billion-base training, the NT benchmark, and the planned
-comparisons (with/without GBST at full scale, MLM vs.\ UL2, with/without strand flipping).
+\subsection*{Learning-rate check (5 October)}
+ChaRNABERT's 5e-4 comes from an RNA model with another batch size, so four GBST-BERT runs with the
+small-experiment setup (500 steps) were compared by \emph{validation} loss (the test split was not
+used for the choice): 5e-4: 1.194, 1e-3: 1.187, \textbf{2e-3: 1.154}, 5e-3: 1.160. The full run
+used 2e-3. Transformer++ kept its paper value (1e-2, Bio-xLSTM Table A3) and was not re-tuned.
+
+\subsection*{Full training (10.5 billion bases)}
+Both models trained for 10,000 steps (10.5 billion bases, about 4.5 passes over the 2.33 billion
+unique training bases). Validation loss during training (12.5\% of the validation set):
+
+\begin{center}
+\begin{minipage}{0.48\linewidth}\small\setlength{\tabcolsep}{3pt}
+\begin{tabular}{rccc}
+\toprule
+Step & Bases & GBST-BERT & Transformer++ \\
+\midrule
+2,000 & 2.1 B & 1.0559 & 1.0516 \\
+4,000 & 4.2 B & \textbf{1.0014} & 1.0153 \\
+6,000 & 6.3 B & \textbf{0.9853} & 0.9963 \\
+8,000 & 8.4 B & \textbf{0.9765} & 0.9823 \\
+10,000 & 10.5 B & -- & 0.9755 \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}{0.50\linewidth}
+\includegraphics[width=\linewidth]{figures/full_val_loss.png}
+\end{minipage}
+\end{center}
+GBST-BERT has no point at step 10,000: after resuming, the training program counts one step
+ahead, so its last scheduled check fell on step 10,001. Its final loss is measured below.
+
+\textbf{Final accuracy test.} Both final models predicted the hidden bases of the same 2,048
+unseen test sequences (311,767 hidden bases, identical masks). Validation split in brackets.
+
+\begin{center}\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccc}
+\toprule
+Model & Loss & Accuracy & A & C & G & T \\
+\midrule
+GBST-BERT & \textbf{0.9753} (0.9689) & \textbf{56.44\%} (56.80\%) & 61.8\% & 48.5\% & 48.8\% & 62.1\% \\
+Transformer++ & 0.9774 (0.9728) & 56.33\% (56.65\%) & 61.3\% & 48.9\% & 48.9\% & 61.9\% \\
+Random guess & 1.3863 & 25.00\% & 25\% & 25\% & 25\% & 25\% \\
+Always ``A'' (most common) & -- & 29.42\% (29.97\%) & & & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{What GBST learned}
+Measured on 8 sequences from different chromosomes, the share of GBST's weight on blocks of
+1 / 2 / 3 / 4 bases was 72 / 22 / 5 / 1\% after 500 steps at learning rate 5e-4, but
+98 / 2 / 0 / 0\% at 2e-3 and \textbf{98 / 2 / 0 / 0\% in the final model}. On human DNA, GBST thus
+learned to read almost only single bases (each still mixed with its neighbours by the
+convolution before the blocks).
+
+\subsection*{A data-loading bug, found and fixed}
+On 5 October the full GBST-BERT run crashed when the data loader returned an empty sequence.
+Cause: in the repository's genome reader, the parallel reader processes shared one open file and
+its read position, so they sometimes read the wrong bases. Measured: 0.35\% of sequences with 2
+readers per GPU (all runs on the first server), 13--33\% with 12. Wrong reads stayed within their
+data split (no test DNA in training), and the accuracy tests read without parallel readers. The
+file is now opened separately in each reader (with a test: 841 of 1,024 sequences wrong without the
+fix, 0 with it); GBST-BERT was resumed from its last checkpoint before the problem (step 3,000) and
+Transformer++ was trained from scratch with the fix.
+
+\subsection*{Conclusions}
+\begin{itemize}
+\item Both 2\,M models learned human DNA well (56\% accuracy, loss $\approx$0.975), in line with
+  the published models of the same size.
+\item GBST-BERT was ahead for most of the training, but at the end the difference is 0.1
+  percentage points --- too small to say that GBST helps, with one run per model.
+\item GBST learned to use mostly single bases, which explains why the two models end so close.
+\item Not fully controlled: only GBST-BERT's learning rate was tuned, and the two models also
+  differ in normalization. The same model with GBST replaced by a plain lookup table would
+  isolate the effect of GBST.
+\end{itemize}
 
 % ------------------------------------------------------------------------------------------
 \section{Differences from the papers}
@@ -348,7 +432,7 @@ comparisons (with/without GBST at full scale, MLM vs.\ UL2, with/without strand 
 \toprule
 Paper & This project & Reason \\
 \midrule
-FlashAttention 2, bf16 numbers & standard attention, fp32 & Our GTX 1080 Ti GPUs support neither; the result is the same, only slower \\
+FlashAttention 2, bf16 numbers & standard attention, fp32 & Our GPUs (GTX 1080 Ti, RTX 2080 Ti, Quadro GV100) support neither; the result is the same, only slower \\
 Eq.~3: offsets written as $X_{i+o:i+o+b}$ & blocks that contain position $i$ & Read literally, a position would get blocks that do not include it; the text (reading frames) describes our version \\
 Eq.~9: SwiGLU written as $\sigma(xW_1)\odot\text{swish}(xW_2)$ & standard SwiGLU & The text cites the standard SwiGLU; the printed formula is a different function \\
 Eq.~1: depthwise convolution & + a $256\times256$ pointwise layer & The paper's Table~9 counts $d\cdot M + d^2$ weights, which implies it \\
@@ -361,17 +445,16 @@ Repository Transformer++ script: LR 8e-3, hidden size 1,024 & LR 1e-2, hidden si
 
 \textbf{Uncertain points:} the block size (4); our reading of Eq.~3 and Eq.~9; the inferred
 pointwise layer; whether learning rate 5e-4 (best for ChaRNABERT's 5 M RNA model) is also good for
-a 2 M DNA model with much larger batches; the small experiment validates on only 2\% of the
-validation data, so its curve is noisier than the full run's will be.
+a 2 M DNA model with much larger batches (our check found 2e-3 better); each model was trained
+once, so run-to-run variation is not measured.
 
 % ------------------------------------------------------------------------------------------
 \section{Next steps}
 \begin{enumerate}
-\item Learning-rate check for GBST-BERT: 500-step runs with 1e-3, 2e-3 and 5e-3, compared by
-  validation loss with the 5e-4 run (about 7--8 hours).
-\item Full training (10.5 billion bases) of GBST-BERT with the best learning rate and of
-  Transformer++, aiming at a loss near 1.0.
-\item After full training: the Nucleotide Transformer benchmark (18 tasks) and the comparisons.
+\item A clean test of GBST: the same model with GBST replaced by a plain lookup table
+  (\code{TOKENIZER=embedding}), same learning rate and settings --- about 14 hours.
+\item The Nucleotide Transformer benchmark (18 biology tasks) with both models; code ready and tested.
+\item Optional: MLM vs.\ UL2, with/without strand flipping, repeated runs with other seeds.
 \end{enumerate}
 
 \section*{References}

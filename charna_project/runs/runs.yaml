@@ -224,21 +224,27 @@ runs:
   - id: R17_full_llama
     title: Full pretraining, Transformer++ (10.5 B bases)
     kind: pretraining
-    status: running
+    status: done
     started: "2026-10-06 08:31 (student07)"
+    ended: "2026-10-06 23:26"
     model: Transformer++-2M, LR 1e-2, fixed data loader
     purpose: The comparison model at full scale (from scratch, after R16; replaces R19).
     command: MODEL=llama RUN_NAME=full_llama_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh
     results: [pretrain/hg38/full_llama_mlm, full]
+    outcome: "Validation loss 1.0516 (step 2,000), 1.0153 (4,000), 0.9963 (6,000), 0.9823 (8,000), 0.9755 (10,000; test 0.9686). Exit 0."
 
   - id: R18_eval_full
     title: Accuracy of the full models
     kind: evaluation
-    status: queued
+    status: done
+    started: "2026-10-06 23:26"
+    ended: "2026-10-06 23:27"
     model: R16 and R17 final checkpoints
     purpose: Same accuracy test as R12, after full training.
     command: python scripts_charna/evaluate_mlm.py outputs/pretrain/hg38/full_charna_mlm:GBST-BERT outputs/pretrain/hg38/full_llama_mlm:Transformer++ --split {valid,test} --n_seqs 2048
     results: [full]
+    outcome: "Test (2,048 sequences, 311,767 hidden bases): GBST-BERT loss 0.9753, accuracy 56.44%; Transformer++ 0.9774, 56.33%. Validation: 0.9689 / 56.80% vs 0.9728 / 56.65%. Random 25%, always-most-common 29.4%. GBST-BERT very slightly ahead (0.1 percentage points) on both splits; one training run per model."
+
 
 # Steps of the project that are not runs (setup, code, decisions), in order.
 log:
@@ -271,3 +277,4 @@ log:
   - {when: "2026-10-06 08:31", what: "Full GBST-BERT run (R16) finished: validation loss 0.9765 at step 8,000 (8.4 B bases). Transformer++ full run (R17) started automatically."}
   - {when: "2026-10-06 14:50", what: "Final GBST-BERT model measured (R20): test accuracy 56.44%, loss 0.9753."}
   - {when: "2026-10-06 15:30", what: "Finding: GBST learned to put about 98% of its weight on single-base blocks (final model; 72% after 500 steps at LR 5e-4, 98-99.8% at LR 2e-3). Scripts demo_predict.py and analyze_gbst_weights.py added; model code copied to the workspace folder charna_model_code/."}
+  - {when: "2026-10-06 23:27", what: "All runs done. Final comparison (R18, test): GBST-BERT 56.44% / loss 0.9753 vs Transformer++ 56.33% / 0.9774."}
