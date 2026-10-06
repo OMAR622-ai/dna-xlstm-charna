@@ -46,6 +46,8 @@ Loss in nats per hidden base; 1.386 = random guess among A/C/G/T.
 - [`results/pretrain/hg38/full_llama_mlm/metrics.csv`](../results/pretrain/hg38/full_llama_mlm/metrics.csv)
 - [`results/pretrain/hg38/full_llama_mlm/model_config.json`](../results/pretrain/hg38/full_llama_mlm/model_config.json)
 - [`results/pretrain/hg38/full_llama_mlm/train.log`](../results/pretrain/hg38/full_llama_mlm/train.log)
+- [`results/full/eval_charna_only/eval_test.csv`](../results/full/eval_charna_only/eval_test.csv)
+- [`results/full/eval_charna_only/eval_test.md`](../results/full/eval_charna_only/eval_test.md)
 - [`results/full/eval_charna_only/eval_valid.csv`](../results/full/eval_charna_only/eval_valid.csv)
 - [`results/full/eval_charna_only/eval_valid.md`](../results/full/eval_charna_only/eval_valid.md)
 - [`results/full/queue.txt`](../results/full/queue.txt)

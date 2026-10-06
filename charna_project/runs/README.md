@@ -22,6 +22,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | [R14_lr_2e-3](R14_lr_2e-3.md) | Learning-rate check, GBST-BERT LR 2e-3 | ✅ done | 2026-10-05 00:23 | Best of the four: validation loss at step 500 1.1541 (test 1.1380). |
 | [R15_lr_5e-3](R15_lr_5e-3.md) | Learning-rate check, GBST-BERT LR 5e-3 | ✅ done | 2026-10-05 02:41 | Validation loss at step 500: 1.1605, second best. |
 | [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ✅ done | 2026-10-05 05:00 (student01); resumed 17:21 and, after the fix, 21:58 (student07) | First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402 (student01). |
+| [R20_eval_charna_final](R20_eval_charna_final.md) | Accuracy of the final GBST-BERT model | ✅ done | 2026-10-06 ≈14:00 | Final GBST-BERT on test DNA: loss 0.9753, accuracy 56.44% (A 61.8%, C 48.5%, G 48.8%, T 62.1%); validation: 0.9689, 56.80%. |
 | [R19_llama_stopped](R19_llama_stopped.md) | Full pretraining, Transformer++, first attempt (stopped) | ⏹ stopped | 2026-10-05 18:51 (student07) | Stopped at ≈ step 2,500 because it used the buggy data loader with 4 workers per GPU (many wrong sequences). |
 | [R17_full_llama](R17_full_llama.md) | Full pretraining, Transformer++ (10.5 B bases) | ⏳ running | 2026-10-06 08:31 (student07) | – |
 | [R18_eval_full](R18_eval_full.md) | Accuracy of the full models | 🕒 queued | – | – |
@@ -57,6 +58,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-05 21:56 | Fix approved and applied (genome file reopened in each worker; new test: 841/1,024 wrong without the fix, 0 with it; 24/24 tests pass). R19 stopped. |
 | 2026-10-05 21:58 | R16 resumed from its step-3,000 checkpoint with the fixed loader; then R17 (Transformer++ from scratch) and R18 (evaluation) run automatically (scripts_charna/server/run_full_student07_v2.sh). |
 | 2026-10-06 08:31 | Full GBST-BERT run (R16) finished: validation loss 0.9765 at step 8,000 (8.4 B bases). Transformer++ full run (R17) started automatically. |
+| 2026-10-06 14:50 | Final GBST-BERT model measured (R20): test accuracy 56.44%, loss 0.9753. |
 
 ## Code changes (git commits on this branch)
 
@@ -111,3 +113,4 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-05 22:06 | `5742140` | Run pages: R16 crash, data-loader fix, restart; R19 stopped |
 | 2026-10-05 23:49 | `20feff4` | Run status 5 Oct 23:41: R16 step 4,000 validation 1.0014 (test 0.9929) |
 | 2026-10-06 05:32 | `01f50af` | Run status 6 Oct 05:23: R16 step 6,000 validation 0.9853 (test 0.9783) |
+| 2026-10-06 15:17 | `08a03b3` | GBST-BERT full run finished (step 10,000): final model, run pages; Transformer++ running |

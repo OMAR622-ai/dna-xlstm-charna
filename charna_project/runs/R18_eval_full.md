@@ -18,6 +18,8 @@ python scripts_charna/evaluate_mlm.py outputs/pretrain/hg38/full_charna_mlm:GBST
 
 ## Files
 
+- [`results/full/eval_charna_only/eval_test.csv`](../results/full/eval_charna_only/eval_test.csv)
+- [`results/full/eval_charna_only/eval_test.md`](../results/full/eval_charna_only/eval_test.md)
 - [`results/full/eval_charna_only/eval_valid.csv`](../results/full/eval_charna_only/eval_valid.csv)
 - [`results/full/eval_charna_only/eval_valid.md`](../results/full/eval_charna_only/eval_valid.md)
 - [`results/full/queue.txt`](../results/full/queue.txt)

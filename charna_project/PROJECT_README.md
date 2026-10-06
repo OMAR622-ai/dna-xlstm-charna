@@ -41,7 +41,7 @@ Papers used (all hyperparameters below cite one of them):
 | Smoke run (50M tokens, both models) | done, see [Smoke run](#smoke-run-50m-tokens) |
 | Small experiment (≈0.5B tokens, both models, accuracy + loss curve) | **done** (4 Oct 2026, 22:05 CEST), see [Small experiment](#small-experiment-05b-tokens): both ≈44% masked-base accuracy, GBST-BERT very slightly ahead |
 | Learning-rate check (GBST-BERT, 1e-3 / 2e-3 / 5e-3, 500 steps each) | **done** (5 Oct 2026, 05:00): **2e-3 best**, see [Learning-rate check](#learning-rate-check) |
-| Full pretraining (10.5B tokens, both models) | **running**: GBST-BERT with LR 2e-3 since 5 Oct 05:00 CEST, then Transformer++ ([R16–R18](runs/README.md)). Two earlier attempts were stopped: earlier GBST + LR 1e-2 after 1 h 10 min, final settings after 1 h 8 min |
+| Full pretraining (10.5B tokens, both models) | **GBST-BERT done** (6 Oct 08:31): test loss **0.9753**, test accuracy **56.44%** ([R16](runs/R16_full_charna.md), [R20](runs/R20_eval_charna_final.md)). **Transformer++ running** since 6 Oct 08:31 ([R17](runs/R17_full_llama.md)); final comparison (R18) follows automatically |
 | NT benchmark (18 tasks) | pipeline ready and tested end to end; waits for the full pretraining |
 | Ablations (d_s, MLM vs UL2, RC aug, GBST vs embedding) | not started |
 

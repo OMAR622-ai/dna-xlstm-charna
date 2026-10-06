@@ -197,6 +197,18 @@ runs:
     command: MODEL=charna LR=<best> RUN_NAME=full_charna_mlm VAL_EVERY=2000 bash scripts_pretrain/run_pretrain_charna.sh   (from ~/charna/run_full_after_lr.sh)
     results: [pretrain/hg38/full_charna_mlm, full]
 
+  - id: R20_eval_charna_final
+    title: Accuracy of the final GBST-BERT model
+    kind: evaluation
+    status: done
+    started: "2026-10-06 ≈14:00"
+    ended: "2026-10-06 ≈14:50"
+    model: R16 final checkpoint (step 10,000), and R14 (step 500) for comparison
+    purpose: Measure the final GBST-BERT model right away (on the CPU, without waiting for Transformer++); same 2,048 sequences and masks as R12.
+    command: python scripts_charna/evaluate_mlm.py outputs/pretrain/hg38/full_charna_mlm:GBST-BERT-full outputs/pretrain/hg38/small_charna_500_lr2e-3:GBST-BERT-small-2e-3 --split {valid,test} --n_seqs 2048 --device cpu
+    results: [full/eval_charna_only]
+    outcome: "Final GBST-BERT on test DNA: loss 0.9753, accuracy 56.44% (A 61.8%, C 48.5%, G 48.8%, T 62.1%); validation: 0.9689, 56.80%. Random guess 25%, always the most common base 29.4%. The 500-step model reached 47.37%."
+
   - id: R19_llama_stopped
     title: Full pretraining, Transformer++, first attempt (stopped)
     kind: pretraining
@@ -257,3 +269,4 @@ log:
   - {when: "2026-10-05 21:56", what: "Fix approved and applied (genome file reopened in each worker; new test: 841/1,024 wrong without the fix, 0 with it; 24/24 tests pass). R19 stopped."}
   - {when: "2026-10-05 21:58", what: "R16 resumed from its step-3,000 checkpoint with the fixed loader; then R17 (Transformer++ from scratch) and R18 (evaluation) run automatically (scripts_charna/server/run_full_student07_v2.sh)."}
   - {when: "2026-10-06 08:31", what: "Full GBST-BERT run (R16) finished: validation loss 0.9765 at step 8,000 (8.4 B bases). Transformer++ full run (R17) started automatically."}
+  - {when: "2026-10-06 14:50", what: "Final GBST-BERT model measured (R20): test accuracy 56.44%, loss 0.9753."}
