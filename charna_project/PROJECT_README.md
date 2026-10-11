@@ -18,6 +18,7 @@ results are directly comparable with the Bio-xLSTM paper.
 | Results of the runs | [`charna_project/results/`](results/) |
 | Data (interval list, hg38 sample, download script) | [`charna_project/datasets/`](datasets/), [`scripts_charna/download_data.sh`](../scripts_charna/download_data.sh) |
 | Model code (GBST + encoder) | [`models/charna/`](../models/charna/) |
+| **Explainer video (88 s, MP4)** | [`docs/video/explainer.mp4`](../docs/video/explainer.mp4) (made with `scripts_charna/make_explainer_video.py`) |
 | **Poster (A0 PDF)** | [`docs/poster/POSTER.pdf`](../docs/poster/POSTER.pdf) (preview: [PNG](../docs/poster/POSTER_preview.png)) |
 | Report (PDF) | [`docs/report/REPORT.pdf`](../docs/report/REPORT.pdf) |
 | Beginner's explanation of the whole project | [`docs/EXPLAINED.md`](../docs/EXPLAINED.md) |
