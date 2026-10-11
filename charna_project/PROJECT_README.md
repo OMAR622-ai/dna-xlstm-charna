@@ -18,7 +18,8 @@ results are directly comparable with the Bio-xLSTM paper.
 | Results of the runs | [`charna_project/results/`](results/) |
 | Data (interval list, hg38 sample, download script) | [`charna_project/datasets/`](datasets/), [`scripts_charna/download_data.sh`](../scripts_charna/download_data.sh) |
 | Model code (GBST + encoder) | [`models/charna/`](../models/charna/) |
-| Progress report (PDF) | [`docs/report/REPORT.pdf`](../docs/report/REPORT.pdf) |
+| **Poster (A0 PDF)** | [`docs/poster/POSTER.pdf`](../docs/poster/POSTER.pdf) (preview: [PNG](../docs/poster/POSTER_preview.png)) |
+| Report (PDF) | [`docs/report/REPORT.pdf`](../docs/report/REPORT.pdf) |
 | Beginner's explanation of the whole project | [`docs/EXPLAINED.md`](../docs/EXPLAINED.md) |
 | 50 questions and short answers | [`docs/QA_50.md`](../docs/QA_50.md) |
 | Original DNA-xLSTM README (installation, data, other models) | [`README_DNA_XLSTM.md`](../README_DNA_XLSTM.md) |
