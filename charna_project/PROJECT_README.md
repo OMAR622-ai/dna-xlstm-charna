@@ -401,7 +401,9 @@ hides bases in a sequence and prints the guesses and the block weights.
 
 `python scripts_charna/visualize_model.py` draws four figures of the final GBST-BERT model on a real
 1,024-base window of hg38 (chr21:33,045,056-33,046,080), CPU only; all in
-[`charna_project/results/model_viz/`](results/model_viz/) (also as one PDF).
+[`charna_project/results/model_viz/`](results/model_viz/); all four with a short explanation on one page:
+[PNG](results/model_viz/model_visualizations_onepage.png) /
+[PDF](results/model_viz/model_visualizations_onepage.pdf) (`scripts_charna/make_viz_onepage.py`).
 
 | Figure | What it shows |
 |---|---|
