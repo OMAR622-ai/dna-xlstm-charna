@@ -404,6 +404,12 @@ the choice.
 
 ![Learning-rate check](charna_project/results/lr_check_val_loss.png)
 
+All trained learning rates in one figure (left: the 500-step check; right: the two full runs,
+which were trained only at the best learning rate of each model;
+`python scripts_charna/plot_lr_curves.py`):
+
+![Validation loss for every trained learning rate](charna_project/results/lr_and_full_val_loss.png)
+
 | Learning rate | Val. loss, step 100 | step 300 | step 500 |
 |---|---|---|---|
 | 5e-4 (ChaRNABERT) | 1.3399 | 1.2146 | 1.1944 |
