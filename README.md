@@ -397,6 +397,22 @@ blocks (kernel 4). GBST-BERT therefore behaves close to a model reading one base
 fits the small difference to Transformer++. `scripts_charna/demo_predict.py` loads the final model,
 hides bases in a sequence and prints the guesses and the block weights.
 
+## Model visualizations
+
+`python scripts_charna/visualize_model.py` draws four figures of the final GBST-BERT model on a real
+1,024-base window of hg38 (chr21:33,045,056-33,046,080), CPU only; all in
+[`charna_project/results/model_viz/`](charna_project/results/model_viz/) (also as one PDF).
+
+| Figure | What it shows |
+|---|---|
+| [1 Architecture](charna_project/results/model_viz/1_architecture.png) | The parts with data shapes and parameter counts: GBST 70,144; each of 4 encoder blocks 508,480; head 3,328; total 2,107,392 |
+| [2 GBST along the sequence](charna_project/results/model_viz/2_gbst_blocks.png) | 98.2% of the weight on single bases at every position; the weight on 2-4-base blocks is the same (1.84%) inside and outside tandem repeats and hardly varies with GC content |
+| [3 Confidence base by base](charna_project/results/model_viz/3_confidence.png) | Each base hidden once: 54.7% correct in this window; inside the tandem repeats 94.5% correct (mean probability 89%) vs 50.8% elsewhere |
+| [4 Attention](charna_project/results/model_viz/4_attention.png) | Layer 1: each head looks at one fixed nearby offset (e.g. a few bases left or right); deeper layers spread out (47% → 29% of attention within ±8 bases); one position in layer 3 is attended by all bases |
+
+So the model's knowledge of local sequence context sits in the convolution and the attention
+heads, not in GBST's block choice, which does not react to repeats.
+
 ## Learning-rate check
 
 ChaRNABERT's learning rate (5e-4, Table 2) comes from an RNA model trained with a different
