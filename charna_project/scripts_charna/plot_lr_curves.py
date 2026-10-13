@@ -43,6 +43,12 @@ FULL = {
 INK, MUTED, GRID = "#1f1f1e", "#6b6a64", "#e6e5e0"
 
 
+# The full GBST-BERT run (R16) logged no step-10,000 validation (after resuming, Lightning counted
+# one step ahead). That point was measured afterwards on the final model with the same validation
+# settings (run R21, scripts_charna/server/final_val_charna.sh) and is added here.
+FINAL_VAL = {"full_charna_mlm": REPO / "charna_project/results/full/final_val_charna/metrics.csv"}
+
+
 def read(run):
     xs, ys = [], []
     with open(RUNS / run / "metrics.csv", newline="") as f:
@@ -50,6 +56,11 @@ def read(run):
             if row.get("val/loss"):
                 xs.append(int(row["tokens"]) / 1e9)
                 ys.append(float(row["val/loss"]))
+    if run in FINAL_VAL and FINAL_VAL[run].exists():
+        with open(FINAL_VAL[run], newline="") as f:
+            row = next(csv.DictReader(f))
+        xs.append(10_000 * 1_048_576 / 1e9)
+        ys.append(float(row["val/loss"]))
     return xs, ys
 
 
@@ -88,12 +99,12 @@ def draw_table(ax):
         ("Transformer++, LR 1e-2", "500 + 10,000", "comparison model; Bio-xLSTM value (Table A3)", "Transformer++"),
     ]
     header = ["", "Model", "Learning rate", "Steps trained", "Val. loss\nat 0.5 B bases",
-              "Val. loss\nat 8.4 B bases", "Final test\nloss", "Final test\naccuracy", "Note"]
+              "Val. loss\nat 10.5 B bases", "Final test\nloss", "Final test\naccuracy", "Note"]
     cells = []
     for name, steps, note, full in rows:
         model, lr = name.split(", LR ")
         full_run = FULL.get(name)
-        val84 = f"{read(full_run)[1][read(full_run)[0].index(min(read(full_run)[0], key=lambda x: abs(x - 8.39)))]:.3f}" if full_run else "\u2013"
+        val84 = f"{read(full_run)[1][-1]:.3f}" if full_run else "\u2013"  # step 10,000
         t_loss, t_acc = (f"{test[full][0]:.4f}", f"{100 * test[full][1]:.2f}%") if full else ("\u2013", "\u2013")
         cells.append([MARKER_GLYPH[SERIES[name]["marker"]], model, lr, steps, f"{last_val(SMALL[name]):.3f}",
                       val84, t_loss, t_acc, note])
@@ -170,8 +181,8 @@ def main():
     left.set_ylabel("validation loss (nats per hidden base)", color=MUTED)
     left.set_xlim(0.05, 0.72)
     right.set_xlim(1.5, 14.2)
-    right.text(14.0, 1.055, "GBST-BERT has no step-10,000 point (see README).\n"
-               "Final test loss: GBST-BERT 0.9753, Transformer++ 0.9774", fontsize=8, color=MUTED,
+    right.text(14.0, 1.055, "GBST-BERT's step-10,000 point was measured after training\n"
+               "on the final model, with the same validation settings (see README).", fontsize=8, color=MUTED,
                va="top", ha="right")
     handles, labels = left.get_legend_handles_labels()
     fig.suptitle("Validation loss for every trained learning rate (lower is better; random guessing = 1.386)",

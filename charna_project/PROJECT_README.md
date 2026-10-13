@@ -359,17 +359,19 @@ Validation loss during training (12.5% of the validation set):
 | 4,000 | 4.2 B | 1.0014 | 1.0153 |
 | 6,000 | 6.3 B | 0.9853 | 0.9963 |
 | 8,000 | 8.4 B | 0.9765 | 0.9823 |
-| 10,000 | 10.5 B | – (*) | 0.9755 |
+| 10,000 | 10.5 B | **0.9728** (*) | 0.9755 |
 
 (*) GBST-BERT was resumed twice; after resuming, Lightning counts one step ahead, so the scheduled
-validation fell on step 10,001 and was not run. Its final loss is measured in the table above.
+validation fell on step 10,001 and was not run during training. It was measured afterwards on the
+final model with exactly the same validation settings (run R21: validation 0.9728, test 0.9670;
+`charna_project/results/full/full_charna_mlm_curve_with_final_val.csv`).
 
 **Conclusions**
 - Both models learned human DNA well: 56% of hidden bases correct (random 25%, most common base
   29%), test loss ≈0.975, within the range of the published 2M models (≈0.96–1.03, Bio-xLSTM Fig. 2).
-- GBST-BERT is ahead during most of the training (by 0.006–0.014 in validation loss at steps
-  4,000–8,000) and very slightly at the end (0.1 percentage points accuracy, 0.002 loss on test and
-  validation). With one training run per model this final difference is too small to call GBST
+- GBST-BERT is ahead from 4 billion bases on (by 0.006–0.014 in validation loss at steps
+  4,000–8,000, 0.003 at step 10,000) and very slightly at the end of the accuracy test (0.1
+  percentage points accuracy, 0.002 test loss). With one training run per model this final difference is too small to call GBST
   better.
 - GBST learned to put ≈98% of its weight on single-base blocks (see below): on human DNA, the
   learned tokenizer behaves almost like reading one base at a time, which explains why the two

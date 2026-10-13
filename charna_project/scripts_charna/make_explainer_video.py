@@ -73,8 +73,11 @@ def header(d, t, title, step):
 
 # ------------------------------------------------------------------ data from the project
 def read_curve(run):
+    # GBST-BERT's step-10,000 validation was measured after training with the same settings (run R21)
+    path = RES / "full/full_charna_mlm_curve_with_final_val.csv" if run == "full_charna_mlm" else \
+        RES / "pretrain/hg38" / run / "metrics.csv"
     xs, ys = [], []
-    with open(RES / "pretrain/hg38" / run / "metrics.csv", newline="") as f:
+    with open(path, newline="") as f:
         for r in csv.DictReader(f):
             if r.get("val/loss"):
                 xs.append(int(r["tokens"]) / 1e9)

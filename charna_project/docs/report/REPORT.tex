@@ -368,7 +368,7 @@ Step & Bases & GBST-BERT & Transformer++ \\
 4,000 & 4.2 B & \textbf{1.0014} & 1.0153 \\
 6,000 & 6.3 B & \textbf{0.9853} & 0.9963 \\
 8,000 & 8.4 B & \textbf{0.9765} & 0.9823 \\
-10,000 & 10.5 B & -- & 0.9755 \\
+10,000 & 10.5 B & \textbf{0.9728}$^*$ & 0.9755 \\
 \bottomrule
 \end{tabular}
 \end{minipage}\hfill
@@ -376,8 +376,9 @@ Step & Bases & GBST-BERT & Transformer++ \\
 \includegraphics[width=\linewidth]{figures/full_val_loss.png}
 \end{minipage}
 \end{center}
-GBST-BERT has no point at step 10,000: after resuming, the training program counts one step
-ahead, so its last scheduled check fell on step 10,001. Its final loss is measured below.
+$^*$ After resuming, the training program counted one step ahead, so GBST-BERT's last scheduled
+check fell on step 10,001 and was skipped. It was measured afterwards on the final model with
+exactly the same settings (validation 0.9728, test 0.9670).
 
 \textbf{Final accuracy test.} Both final models predicted the hidden bases of the same 2,048
 unseen test sequences (311,767 hidden bases, identical masks). Validation split in brackets.

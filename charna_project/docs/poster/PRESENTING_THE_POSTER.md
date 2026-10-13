@@ -104,9 +104,9 @@ the early runs, always from the same data split, and the accuracy test never use
 **In simple words:**
 - **Left graph — learning-rate check (500 short steps):** four learning rates for GBST-BERT and
   Transformer++. The lowest line is the best: **2e-3**.
-- **Right graph — full training (10,000 steps):** loss goes down from about 1.05 to about 0.975
-  for both models. The blue line (GBST-BERT) is below the orange line (Transformer++) for most
-  of the training, but they come together at the end.
+- **Right graph — full training (10,000 steps):** loss goes down from about 1.05 to about 0.97
+  for both models. The blue line (GBST-BERT) is below the orange line (Transformer++) from
+  4 billion bases on; at the end the gap is small (0.973 vs 0.975).
 - **Table:** one row per run. The key numbers are the bold ones: **final test accuracy 56.44%
   (GBST-BERT) vs 56.33% (Transformer++)**, test loss 0.9753 vs 0.9774.
 
@@ -117,9 +117,9 @@ only 0.1 percentage points. With one run per model, that is too small to call a 
 **Possible questions:**
 - *Is 56% good?* — "Yes for a small model: random is 25%, and our loss of 0.975 is in the range of
   the published models of the same size (about 0.96–1.03)."
-- *Why is there no blue point at 10 billion?* — "After restarting the training, the step
-  counter was one ahead, so the last scheduled check was skipped. I measured the final model
-  separately: test loss 0.9753."
+- *Was the last blue point measured differently?* — "After restarting the training, the step
+  counter was one ahead, so the last check was skipped during training. I ran exactly the same
+  check on the final model afterwards: 0.973."
 
 ---
 
