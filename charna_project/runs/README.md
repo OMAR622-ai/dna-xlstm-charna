@@ -23,6 +23,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | [R15_lr_5e-3](R15_lr_5e-3.md) | Learning-rate check, GBST-BERT LR 5e-3 | ✅ done | 2026-10-05 02:41 | Validation loss at step 500: 1.1605, second best. |
 | [R16_full_charna](R16_full_charna.md) | Full pretraining, GBST-BERT (10.5 B bases) | ✅ done | 2026-10-05 05:00 (student01); resumed 17:21 and, after the fix, 21:58 (student07) | First validation point (step 2,000, 2.1 B bases): validation loss 1.0559, test loss 1.0402 (student01). |
 | [R20_eval_charna_final](R20_eval_charna_final.md) | Accuracy of the final GBST-BERT model | ✅ done | 2026-10-06 ≈14:00 | Final GBST-BERT on test DNA: loss 0.9753, accuracy 56.44% (A 61.8%, C 48.5%, G 48.8%, T 62.1%); validation: 0.9689, 56.80%. |
+| [R21_final_val_charna](R21_final_val_charna.md) | Missing step-10,000 validation of the full GBST-BERT run | ✅ done | 2026-10-13 16:29 (student07) | Validation loss 0.9728, test loss 0.9670 (Transformer++ at step 10,000: 0.9755 / 0.9686). |
 | [R19_llama_stopped](R19_llama_stopped.md) | Full pretraining, Transformer++, first attempt (stopped) | ⏹ stopped | 2026-10-05 18:51 (student07) | Stopped at ≈ step 2,500 because it used the buggy data loader with 4 workers per GPU (many wrong sequences). |
 | [R17_full_llama](R17_full_llama.md) | Full pretraining, Transformer++ (10.5 B bases) | ✅ done | 2026-10-06 08:31 (student07) | Validation loss 1.0516 (step 2,000), 1.0153 (4,000), 0.9963 (6,000), 0.9823 (8,000), 0.9755 (10,000; test 0.9686). |
 | [R18_eval_full](R18_eval_full.md) | Accuracy of the full models | ✅ done | 2026-10-06 23:26 | Test (2,048 sequences, 311,767 hidden bases): GBST-BERT loss 0.9753, accuracy 56.44%; Transformer++ 0.9774, 56.33%. |
@@ -61,6 +62,7 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-06 14:50 | Final GBST-BERT model measured (R20): test accuracy 56.44%, loss 0.9753. |
 | 2026-10-06 15:30 | Finding: GBST learned to put about 98% of its weight on single-base blocks (final model; 72% after 500 steps at LR 5e-4, 98-99.8% at LR 2e-3). Scripts demo_predict.py and analyze_gbst_weights.py added; model code copied to the workspace folder charna_model_code/. |
 | 2026-10-06 23:27 | All runs done. Final comparison (R18, test): GBST-BERT 56.44% / loss 0.9753 vs Transformer++ 56.33% / 0.9774. |
+| 2026-10-13 16:45 | Missing step-10,000 validation of GBST-BERT measured (R21): 0.9728 (Transformer++ 0.9755). Both curves now end at 10.5 B bases; figures, README, report, poster and video updated. |
 
 ## Code changes (git commits on this branch)
 
@@ -122,3 +124,16 @@ One page per run (training, checks, evaluations). Hand-written facts come from [
 | 2026-10-06 15:29 | `e598897` | Rebuild charna_project/, project log |
 | 2026-10-06 15:30 | `9fe800d` | Project log: GBST weight finding |
 | 2026-10-07 00:03 | `d9d9285` | Final results: GBST-BERT 56.44% / 0.9753 vs Transformer++ 56.33% / 0.9774 (test); report updated |
+| 2026-10-07 00:03 | `52e01ce` | Final Transformer++ model, run pages R17/R18, results |
+| 2026-10-11 14:38 | `3bd05b6` | Figure: validation loss for every trained learning rate (LR check + full runs) |
+| 2026-10-11 14:38 | `85fcd11` | charna_project: learning-rate figure |
+| 2026-10-11 14:46 | `522657a` | A0 poster of the project; curve figure with results table underneath |
+| 2026-10-11 14:46 | `220cd62` | charna_project: poster and figure |
+| 2026-10-11 15:48 | `cff1a56` | Explainer video (88 s): aim, data, masking game, model, GBST, training, results, conclusions |
+| 2026-10-11 15:48 | `cd00601` | charna_project: explainer video script |
+| 2026-10-11 16:02 | `6285c8e` | Model visualizations: architecture, GBST along a sequence, per-base confidence, attention |
+| 2026-10-11 16:02 | `357a1f9` | charna_project: visualization script |
+| 2026-10-11 16:05 | `58eb2aa` | One-page summary of the four model visualizations with short explanations |
+| 2026-10-11 16:05 | `8fb871a` | charna_project: one-page visualization script |
+| 2026-10-13 14:47 | `17418d5` | Poster presentation guide: simple explanation of each block, what to say, likely questions |
+| 2026-10-13 14:47 | `f10ddf3` | Rebuild charna_project/ |

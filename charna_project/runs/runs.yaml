@@ -209,6 +209,18 @@ runs:
     results: [full/eval_charna_only]
     outcome: "Final GBST-BERT on test DNA: loss 0.9753, accuracy 56.44% (A 61.8%, C 48.5%, G 48.8%, T 62.1%); validation: 0.9689, 56.80%. Random guess 25%, always the most common base 29.4%. The 500-step model reached 47.37%."
 
+  - id: R21_final_val_charna
+    title: Missing step-10,000 validation of the full GBST-BERT run
+    kind: evaluation
+    status: done
+    started: "2026-10-13 16:29 (student07)"
+    ended: "2026-10-13 ≈16:45"
+    model: R16 final checkpoint (step 10,000)
+    purpose: R16 logged no validation at step 10,000 (after resuming, Lightning counted one step ahead, so the check fell on step 10,001). Measure it with exactly the same settings as during training (validation and test sets, 12.5% of the batches, 4 GPUs) so the curve ends at 10.5 B bases like Transformer++.
+    command: bash scripts_charna/server/final_val_charna.sh   (run_pretrain_charna.sh with train.pretrained_model_path=<final ckpt> train.validate_at_start=true, in a scratch run directory)
+    results: [full/final_val_charna]
+    outcome: "Validation loss 0.9728, test loss 0.9670 (Transformer++ at step 10,000: 0.9755 / 0.9686). Added as the last point of the GBST-BERT curve (charna_project/results/full/full_charna_mlm_curve_with_final_val.csv)."
+
   - id: R19_llama_stopped
     title: Full pretraining, Transformer++, first attempt (stopped)
     kind: pretraining
@@ -278,3 +290,4 @@ log:
   - {when: "2026-10-06 14:50", what: "Final GBST-BERT model measured (R20): test accuracy 56.44%, loss 0.9753."}
   - {when: "2026-10-06 15:30", what: "Finding: GBST learned to put about 98% of its weight on single-base blocks (final model; 72% after 500 steps at LR 5e-4, 98-99.8% at LR 2e-3). Scripts demo_predict.py and analyze_gbst_weights.py added; model code copied to the workspace folder charna_model_code/."}
   - {when: "2026-10-06 23:27", what: "All runs done. Final comparison (R18, test): GBST-BERT 56.44% / loss 0.9753 vs Transformer++ 56.33% / 0.9774."}
+  - {when: "2026-10-13 16:45", what: "Missing step-10,000 validation of GBST-BERT measured (R21): 0.9728 (Transformer++ 0.9755). Both curves now end at 10.5 B bases; figures, README, report, poster and video updated."}

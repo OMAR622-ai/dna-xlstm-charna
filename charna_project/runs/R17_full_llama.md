@@ -85,6 +85,8 @@ Accuracy = the model's best guess among A, C, G, T is the true base. Base compos
 - [`results/full/eval_test.md`](../results/full/eval_test.md)
 - [`results/full/eval_valid.csv`](../results/full/eval_valid.csv)
 - [`results/full/eval_valid.md`](../results/full/eval_valid.md)
+- [`results/full/final_val_charna/metrics.csv`](../results/full/final_val_charna/metrics.csv)
+- [`results/full/full_charna_mlm_curve_with_final_val.csv`](../results/full/full_charna_mlm_curve_with_final_val.csv)
 - [`results/full/queue.txt`](../results/full/queue.txt)
 - [`results/full/stopped/queue.txt`](../results/full/stopped/queue.txt)
 - [`results/full/stopped2/queue.txt`](../results/full/stopped2/queue.txt)
