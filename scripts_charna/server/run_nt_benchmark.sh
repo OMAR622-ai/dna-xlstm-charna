@@ -7,7 +7,7 @@
 #   bash run_nt_benchmark.sh "1 2 3"          # seeds to run (finished runs are skipped)
 source ~/envs/charna/bin/activate
 ROOT=~/charna/dna-xlstm
-OUT=${ROOT}/outputs/downstream/nt_queue
+OUT=${OUT_DIR:-${ROOT}/outputs/downstream/nt_queue}  # queue + log (OUT_DIR for a separate queue)
 mkdir -p ${OUT}
 CKPT_STORE=${CKPT_STORE:-/tmp/omohamed_nt_ckpts}  # fine-tuned checkpoints (local disk, not permanent)
 mkdir -p ${CKPT_STORE} && chmod 700 ${CKPT_STORE}
@@ -33,6 +33,8 @@ promoter_tata 3e-3 128
 splice_sites_all 8e-4 64
 splice_sites_acceptors 2e-3 128
 splice_sites_donors 3e-3 128"
+# NT_TABLE=<file> replaces these settings (same format), e.g. for a learning-rate check
+[ -n "${NT_TABLE}" ] && TABLE_A5=$(cat ${NT_TABLE})
 
 QUEUE=${OUT}/jobs.txt
 : > ${QUEUE}

@@ -1,0 +1,4 @@
+splice_sites_acceptors 1e-3 128
+splice_sites_acceptors 5e-4 128
+splice_sites_donors 1e-3 128
+splice_sites_donors 5e-4 128
