@@ -51,22 +51,28 @@ worker() {
     [ -z "${job}" ] && break
     read -r model task lr bs seed <<< "${job}"
     start=$(date +%s)
-    ( cd ${ROOT}/scripts_downstream && CUDA_VISIBLE_DEVICES=${gpu} MODEL=${model} \
-        PRETRAIN_DIR=../outputs/pretrain/hg38/full_${model}_mlm \
-        PRETRAINED_PATH=${ROOT}/outputs/pretrain/hg38/full_${model}_mlm/checkpoints/last.ckpt \
-        TASKS=${task} LRS=${lr} BATCH_SIZES=${bs} SEEDS=${seed} NUM_WORKERS=4 \
-        bash run_nucleotide_charna.sh > /dev/null 2>&1 )
-    status=$?
+    run=${ROOT}/outputs/downstream/nt_cv10_ep20/${task}/full_${model}_mlm_ph/LR-${lr}_BATCH_SIZE-${bs}/seed-${seed}
+    # run_nucleotide_charna.sh exits 0 even when training fails (e.g. a Hugging Face server error
+    # while loading the data), so a job counts as done only when its metrics contain test scores
+    for attempt in 1 2 3; do
+      ( cd ${ROOT}/scripts_downstream && CUDA_VISIBLE_DEVICES=${gpu} MODEL=${model} \
+          PRETRAIN_DIR=../outputs/pretrain/hg38/full_${model}_mlm \
+          PRETRAINED_PATH=${ROOT}/outputs/pretrain/hg38/full_${model}_mlm/checkpoints/last.ckpt \
+          TASKS=${task} LRS=${lr} BATCH_SIZES=${bs} SEEDS=${seed} NUM_WORKERS=4 \
+          bash run_nucleotide_charna.sh > /dev/null 2>&1 )
+      grep -qs "test/" ${run}/metrics.csv && break
+      [ ${attempt} -lt 3 ] && sleep 600
+    done
+    if grep -qs "test/" ${run}/metrics.csv; then status=ok; else status=FAILED; fi
     # the home disk is only 20 GB: once a run is tested, delete its last-epoch checkpoint and move
     # the best-validation checkpoint (the one that was tested) to the server's local disk, which is
     # large but not permanent; a link to it stays in the run folder
-    run=${ROOT}/outputs/downstream/nt_cv10_ep20/${task}/full_${model}_mlm_ph/LR-${lr}_BATCH_SIZE-${bs}/seed-${seed}
-    if grep -qs "test/" ${run}/metrics.csv && [ ! -L ${run}/checkpoints ]; then
+    if [ ${status} = ok ] && [ ! -L ${run}/checkpoints ]; then
       rm -f ${run}/checkpoints/last.ckpt
       dest=${CKPT_STORE}/${task}/full_${model}_mlm_ph/LR-${lr}_BATCH_SIZE-${bs}/seed-${seed}
       mkdir -p ${dest} && mv ${run}/checkpoints ${dest}/ && ln -s ${dest}/checkpoints ${run}/checkpoints
     fi
-    log "gpu${gpu} ${model} ${task} lr=${lr} bs=${bs} seed=${seed} exit=${status} seconds=$(( $(date +%s) - start ))"
+    log "gpu${gpu} ${model} ${task} lr=${lr} bs=${bs} seed=${seed} status=${status} attempts=${attempt} seconds=$(( $(date +%s) - start ))"
   done
   log "gpu${gpu} worker done"
 }
