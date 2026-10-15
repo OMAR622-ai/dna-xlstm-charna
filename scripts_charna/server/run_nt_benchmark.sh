@@ -40,7 +40,11 @@ QUEUE=${OUT}/jobs.txt
 : > ${QUEUE}
 for seed in ${SEEDS}; do
   for model in charna llama; do
-    echo "${TABLE_A5}" | while read -r task lr bs; do echo "${model} ${task} ${lr} ${bs} ${seed}" >> ${QUEUE}; done
+    # an optional 4th column (charna or llama) limits a line to one model
+    echo "${TABLE_A5}" | while read -r task lr bs only; do
+      [ -n "${only}" ] && [ "${only}" != "${model}" ] && continue
+      echo "${model} ${task} ${lr} ${bs} ${seed}" >> ${QUEUE}
+    done
   done
 done
 log() { echo "$(date "+%F %T") $*" >> ${OUT}/queue_log.txt; }

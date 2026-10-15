@@ -1,0 +1,19 @@
+H3 8e-4 128
+H3K14ac 6e-4 128
+H3K36me3 6e-4 64
+H3K4me1 8e-4 128
+H3K4me2 6e-4 64
+H3K4me3 8e-4 128
+H3K79me3 1e-3 128
+H3K9ac 4e-4 64
+H4 8e-4 64
+H4ac 4e-4 64
+enhancers 2e-3 512
+enhancers_types 2e-3 512
+promoter_all 4e-4 64
+promoter_no_tata 1e-3 128
+promoter_tata 3e-3 128
+splice_sites_all 8e-4 64
+splice_sites_acceptors 1e-3 128 charna
+splice_sites_acceptors 2e-3 128 llama
+splice_sites_donors 1e-3 128
