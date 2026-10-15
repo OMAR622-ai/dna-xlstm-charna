@@ -54,7 +54,12 @@ worker() {
         PRETRAINED_PATH=${ROOT}/outputs/pretrain/hg38/full_${model}_mlm/checkpoints/last.ckpt \
         TASKS=${task} LRS=${lr} BATCH_SIZES=${bs} SEEDS=${seed} NUM_WORKERS=4 \
         bash run_nucleotide_charna.sh > /dev/null 2>&1 )
-    log "gpu${gpu} ${model} ${task} lr=${lr} bs=${bs} seed=${seed} exit=$? seconds=$(( $(date +%s) - start ))"
+    status=$?
+    # the home disk is only 20 GB: once a run is tested, keep its best-validation checkpoint
+    # (the one that was tested) and delete the last-epoch copy (about 34 MB per run)
+    run=${ROOT}/outputs/downstream/nt_cv10_ep20/${task}/full_${model}_mlm_ph/LR-${lr}_BATCH_SIZE-${bs}/seed-${seed}
+    grep -qs "test/" ${run}/metrics.csv && ls ${run}/checkpoints/val/*.ckpt > /dev/null 2>&1 && rm -f ${run}/checkpoints/last.ckpt
+    log "gpu${gpu} ${model} ${task} lr=${lr} bs=${bs} seed=${seed} exit=${status} seconds=$(( $(date +%s) - start ))"
   done
   log "gpu${gpu} worker done"
 }
