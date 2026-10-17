@@ -19,6 +19,7 @@ results are directly comparable with the Bio-xLSTM paper.
 | **NT benchmark results** (table, figure) | [`charna_project/results/downstream/`](charna_project/results/downstream/nt_comparison.md) |
 | Fine-tuned NT models (360 + 24 checkpoints) | GitHub release [`nt-finetuned-models`](https://github.com/OMAR622-ai/dna-xlstm-charna/releases/tag/nt-finetuned-models) |
 | Data (interval list, hg38 sample, download script) | [`charna_project/datasets/`](charna_project/datasets/), [`scripts_charna/download_data.sh`](scripts_charna/download_data.sh) |
+| **The whole model in one file** (clean, only needs PyTorch; loads the trained model; `python gbst_bert.py --test`) | [`gbst_bert.py`](gbst_bert.py) |
 | Model code (GBST + encoder) | [`models/charna/`](models/charna/) |
 | **Explainer video (88 s, MP4)** | [`docs/video/explainer.mp4`](docs/video/explainer.mp4) (made with `scripts_charna/make_explainer_video.py`) |
 | **Poster (A0 PDF)** | [`docs/poster/POSTER.pdf`](docs/poster/POSTER.pdf) (preview: [PNG](docs/poster/POSTER_preview.png)) |
