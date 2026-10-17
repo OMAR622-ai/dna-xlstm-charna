@@ -82,8 +82,8 @@ def main():
             txt = f"{means[m][0]:.3f}±{means[m][1]:.3f}"
             cells.append(f"**{txt}**" if abs(means[m][0] - best) < 5e-4 else txt)
         lines.append(f"| {task} | {p['metric']} | " + " | ".join(cells) + f" | {min(n_seeds)} |")
-        rows_csv.append({"task": task, "metric": p["metric"], **{f"{m} mean": f"{means[m][0]:.4f}" for m in means},
-                         **{f"{m} range": f"{means[m][1]:.4f}" for m in means}, "seeds": min(n_seeds)})
+        rows_csv.append({"task": task, "metric": p["metric"], **{f"{m} mean": f"{means[m][0]:.6f}" for m in means},
+                         **{f"{m} range": f"{means[m][1]:.6f}" for m in means}, "seeds": min(n_seeds)})
     lines.append("")
     lines.append("Mean ± (max − min) over seeds of the test metric. Paper values: Bio-xLSTM Table 1 (10 seeds, "
                  "per-task hyperparameter search). Ours: final pretrained models (10,000 steps), Bio-xLSTM's "
