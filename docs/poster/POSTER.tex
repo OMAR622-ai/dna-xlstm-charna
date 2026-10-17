@@ -169,16 +169,28 @@ sequences} (311,767 hidden bases). Both models get \emph{exactly the same} hidde
 \end{columns}
 
 % =============================== ROW 2: results ===============================
-\block{6 \quad Results: validation loss for every trained learning rate, and the final test}{
+\begin{columns}
+\column{0.46}
+\block{6 \quad Pretraining: validation loss for every learning rate, and the final test}{
 \begin{center}
-\includegraphics[width=0.70\linewidth]{figures/curves_table.pdf}
+\includegraphics[width=0.98\linewidth]{figures/curves_table.pdf}
 \end{center}
 }
+\column{0.54}
+\block{7 \quad Prediction: 18 biology tasks (Nucleotide Transformer benchmark, 10 repeats)}{
+\begin{center}
+\includegraphics[width=0.98\linewidth]{figures/nt_comparison.pdf}
+\end{center}
+Both models fine-tuned as in Bio-xLSTM (same settings, 10 repeats, mean and range).
+\textbf{GBST-BERT has the best mean on 13 of 18 tasks} (xLSTM-PH 4) and beats Transformer++ on
+\textbf{16 of 18}. Weak spot: enhancers.
+}
+\end{columns}
 
 % =============================== ROW 3 ===============================
 \begin{columns}
 \column{0.34}
-\block{7 \quad What GBST learned}{
+\block{8 \quad What GBST learned}{
 Share of GBST's weight on blocks of 1 / 2 / 3 / 4 bases (8 sequences, different chromosomes):
 
 \begin{center}\normalsize
@@ -200,28 +212,28 @@ one-base-at-a-time model.
 }
 
 \column{0.36}
-\block{8 \quad Conclusions}{
+\block{9 \quad Conclusions}{
 \begin{itemize}
 \item Both 2\,M models learned human DNA well: \textbf{56\% accuracy} (random 25\%), test loss
   $\approx$\textbf{0.975}, in the range of the published 2\,M models ($\approx$0.96--1.03).
-\item GBST-BERT was ahead for most of the training, but finished only \textbf{0.1 points}
-  ahead (56.44\% vs 56.33\%) --- too small to say GBST helps.
-\item GBST learned to use mostly single bases, which explains why the models end so close.
-\item On RNA, ChaRNABERT also found only small gains (e.g.\ loss 0.498 vs 0.508, Table 2).
+\item In pretraining, GBST-BERT finished only \textbf{0.1 points} ahead (56.44\% vs 56.33\%).
+\item On the \textbf{prediction tasks} the difference is clear: GBST-BERT beats Transformer++ on
+  \textbf{16 of 18 tasks} and has the best mean of all seven models on \textbf{13 of 18}.
+\item Enhancers stay weak for both our models.
 \end{itemize}
 
-\textbf{Caveats:} one run per model; only GBST-BERT's learning rate was tuned; the models also
-differ in normalization.
+\textbf{Caveats:} one pretraining run per model; only GBST-BERT's pretraining learning rate was
+tuned; the models also differ in normalization; fine-tuning settings were the paper's, not tuned
+per model.
 }
 
 \column{0.30}
-\block{9 \quad Next steps}{
+\block{10 \quad Next steps}{
 \begin{enumerate}
 \item \textbf{Clean test of GBST:} the same model with GBST replaced by a plain lookup table
   (\code{TOKENIZER=embedding}), same settings.
-\item \textbf{Biology tasks:} Nucleotide Transformer benchmark (18 tasks: promoters, enhancers,
-  splice sites, histone marks) --- code ready and tested.
-\item Repeat runs with other seeds; MLM vs UL2.
+\item Why are enhancers weak? Longer DNA context (beyond 1,024 bases).
+\item Repeat pretraining with other seeds; MLM vs UL2.
 \end{enumerate}
 
 \vspace{0.2em}
