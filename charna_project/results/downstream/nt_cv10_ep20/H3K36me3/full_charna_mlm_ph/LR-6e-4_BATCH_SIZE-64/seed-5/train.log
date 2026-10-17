@@ -1,0 +1,19 @@
+[2026-10-16 06:00:13,517][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.LearningRateMonitor>
+[2026-10-16 06:00:13,518][__main__][INFO] - Instantiating callback <src.callbacks.timer.Timer>
+[2026-10-16 06:00:13,523][__main__][INFO] - Instantiating callback <src.callbacks.params.ParamsLog>
+[2026-10-16 06:00:13,526][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-16 06:00:13,529][__main__][INFO] - Instantiating callback <pytorch_lightning.callbacks.ModelCheckpoint>
+[2026-10-16 06:00:13,530][__main__][INFO] - Instantiating callback <src.callbacks.metrics_csv.MetricsCSV>
+[2026-10-16 06:00:13,534][__main__][INFO] - Instantiating trainer <pytorch_lightning.Trainer>
+[2026-10-16 06:00:19,335][__main__][INFO] - Custom load_state_dict function is running.
+[2026-10-16 06:00:19,365][__main__][INFO] - config.train.ckpt='checkpoints/test/loss.ckpt' fsspec_exists(config.train.ckpt)=False
+[2026-10-16 06:00:21,740][__main__][INFO] - Optimizer group 0 | 33 tensors | weight_decay 0.1
+[2026-10-16 06:00:21,740][__main__][INFO] - Optimizer group 1 | 19 tensors | weight_decay 0.0
+[2026-10-16 06:00:22,442][__main__][INFO] - Creating validation loaders
+[2026-10-16 06:00:22,442][__main__][INFO] - ['val']
+[2026-10-16 06:00:23,865][__main__][INFO] - Creating train loader
+[2026-10-16 07:01:56,585][__main__][INFO] - Loaded best validation checkpoint from epoch 15
+[2026-10-16 07:01:56,586][__main__][INFO] - Testing approaching ...
+[2026-10-16 07:02:00,244][__main__][INFO] - Custom load_state_dict function is running.
+[2026-10-16 07:02:01,203][__main__][INFO] - Creating validation loaders
+[2026-10-16 07:02:01,203][__main__][INFO] - ['test']
