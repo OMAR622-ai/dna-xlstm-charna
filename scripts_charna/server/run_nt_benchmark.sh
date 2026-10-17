@@ -13,6 +13,7 @@ CKPT_STORE=${CKPT_STORE:-/tmp/omohamed_nt_ckpts}  # fine-tuned checkpoints (loca
 mkdir -p ${CKPT_STORE} && chmod 700 ${CKPT_STORE}
 SEEDS=${1:-"1 2 3"}
 GPUS=${GPUS:-"1 2 3 4"}
+NT_OUT_ROOT=${NT_OUT_ROOT:-./outputs/downstream/nt_cv10_ep20}  # results folder (relative to the repository)
 
 # task  lr  batch   (Bio-xLSTM Table A5, DNA-xLSTM-Ph column)
 TABLE_A5="H3 8e-4 128
@@ -57,14 +58,14 @@ worker() {
     [ -z "${job}" ] && break
     read -r model task lr bs seed <<< "${job}"
     start=$(date +%s)
-    run=${ROOT}/outputs/downstream/nt_cv10_ep20/${task}/full_${model}_mlm_ph/LR-${lr}_BATCH_SIZE-${bs}/seed-${seed}
+    run=${ROOT}/${NT_OUT_ROOT#./}/${task}/full_${model}_mlm_ph/LR-${lr}_BATCH_SIZE-${bs}/seed-${seed}
     # run_nucleotide_charna.sh exits 0 even when training fails (e.g. a Hugging Face server error
     # while loading the data), so a job counts as done only when its metrics contain test scores
     for attempt in 1 2 3; do
       ( cd ${ROOT}/scripts_downstream && CUDA_VISIBLE_DEVICES=${gpu} MODEL=${model} \
           PRETRAIN_DIR=../outputs/pretrain/hg38/full_${model}_mlm \
           PRETRAINED_PATH=${ROOT}/outputs/pretrain/hg38/full_${model}_mlm/checkpoints/last.ckpt \
-          TASKS=${task} LRS=${lr} BATCH_SIZES=${bs} SEEDS=${seed} NUM_WORKERS=4 \
+          TASKS=${task} LRS=${lr} BATCH_SIZES=${bs} SEEDS=${seed} NUM_WORKERS=4 OUT_ROOT=${NT_OUT_ROOT} \
           bash run_nucleotide_charna.sh > /dev/null 2>&1 )
       grep -qs "test/" ${run}/metrics.csv && break
       [ ${attempt} -lt 3 ] && sleep 600
