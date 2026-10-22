@@ -525,6 +525,50 @@ notes(ch, "The genome-reader bug: 0.35% wrong sequences with 2 workers, up to 33
       "their own split, so no test DNA leaked. A Hugging Face server error made 9 jobs fail silently; they were "
       "re-run.")
 
+# ------------------------------------------------------------------------------ 18 better predictions (new)
+bp = new_slide("How to get better predictions")
+recs = [
+    ("1", "Tune fine-tuning for our model",
+     "Search learning rate and batch per task, choose by validation score:",
+     "LRS=\"1e-4 3e-4 1e-3\" BATCH_SIZES=\"64 128\" bash run_nucleotide_charna.sh",
+     "Splice donors: 0.663 → 0.980 by the learning rate alone"),
+    ("2", "Average several fine-tuned models",
+     "Ensemble: average the predictions of the 10 fine-tuned repeats of a task",
+     "all 384 fine-tuned models are saved (GitHub release)",
+     "Some single repeats failed (ranges up to ±0.21)"),
+    ("3", "Pretrain longer",
+     "More steps (and, if memory allows, a larger model):",
+     "MAX_STEPS=20000 bash run_pretrain_charna.sh",
+     "Validation loss was still falling at 10,000 steps"),
+    ("4", "Give the model longer DNA",
+     "Pretrain and fine-tune on longer pieces, for long-range signals:",
+     "SEQLEN=2048 bash run_pretrain_charna.sh",
+     "Enhancers are the biggest gap: −0.21 vs the paper"),
+]
+text(bp, 1.35, 1.62, 6.6, 0.3, "What to do – and how", size=13, bold=True, color=MUTED)
+text(bp, 8.55, 1.62, 4.1, 0.3, "Why (from our results)", size=13, bold=True, color=MUTED)
+for i, (n, head, how, cmd, why_t) in enumerate(recs):
+    y = 1.98 + i * 1.07
+    card(bp, 0.53, y, 12.12, 0.97)
+    circle = bp.shapes.add_shape(MSO_SHAPE.OVAL, Inches(0.72), Inches(y + 0.2), Inches(0.56), Inches(0.56))
+    circle.fill.solid(); circle.fill.fore_color.rgb = GBST; circle.line.fill.background(); circle.shadow.inherit = False
+    ctf = circle.text_frame; ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
+    cp = ctf.paragraphs[0]; cp.alignment = PP_ALIGN.CENTER; cr = cp.add_run(); cr.text = n
+    cr.font.size, cr.font.bold, cr.font.name = Pt(18), True, "Arial"; cr.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+    text(bp, 1.5, y + 0.1, 6.9, 0.3, [[(head, {"bold": True, "size": 16, "color": INK}),
+                                      ("   " + how, {"size": 12, "color": SOFT})]], spacing=1.0)
+    text(bp, 1.5, y + 0.6, 6.9, 0.28, [[(cmd, {"size": 11, "color": RGBColor(0x1F, 0x5F, 0xAE)})]], spacing=1.0)
+    for r in bp.shapes[-1].text_frame.paragraphs[0].runs:
+        r.font.name = "Courier New"
+    text(bp, 8.55, y + 0.12, 3.95, 0.75, why_t, size=13, color=INK, anchor=MSO_ANCHOR.MIDDLE, spacing=1.05)
+footnote(bp, "Only the effect of the learning rate (1) was measured; the gains of 2–4 are expected, not yet tested. "
+         "Any new run: same repeats, choose by validation score, report every result.")
+notes(bp, "Four ways to get better predictions, ordered by how cheap they are. One: tune the fine-tuning settings "
+      "for our model; the paper did this for its own models, and on splice donors the learning rate alone changed "
+      "F1 from 0.663 to 0.980. Two: average the predictions of several fine-tuned models; the models already exist. "
+      "Three: pretrain longer; the loss had not stopped falling. Four: give the model longer DNA, which should "
+      "help enhancers. Only the first was measured in this project.")
+
 # ------------------------------------------------------------------------------ 18 conclusion (new)
 cc = new_slide("Conclusion and next steps")
 text(cc, 0.53, 1.8, 12.1, 1.2,
@@ -546,7 +590,7 @@ notes(cc, "End on the one-sentence message. The most valuable next experiment is
       "identical except GBST.")
 
 # ------------------------------------------------------------------------------ order
-order = [title_slide, problem, method, why, data, pre, pr, gl, cf, bm, rf, t1, t2, df, results, sw, ch, cc]
+order = [title_slide, problem, method, why, data, pre, pr, gl, cf, bm, rf, t1, t2, df, results, sw, ch, bp, cc]
 sld_ids = prs.slides._sldIdLst
 by_slide = {id(s): el for s, el in zip(prs.slides, list(sld_ids))}
 elements = [by_slide[id(s)] for s in order]
