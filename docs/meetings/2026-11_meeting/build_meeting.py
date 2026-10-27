@@ -5,7 +5,7 @@ import sys
 from pptx import Presentation
 from pptx.util import Emu, Pt
 
-SRC, OUT, FIG = sys.argv[1], sys.argv[2], sys.argv[3]
+SRC, OUT, FIG, TABLE = sys.argv[1:5]
 p = Presentation(SRC)
 title, recap, progress, nxt = p.slides
 
@@ -68,7 +68,8 @@ fill(recap, "Recap", [
 
 p1 = clone(progress)
 p2 = clone(progress)
-fill(progress, "Progress (1/3): pretraining and benchmark", [
+p3 = clone(progress)
+fill(progress, "Progress (1/4): pretraining and benchmark", [
     (0, "Pretraining (test set): ", "masked-base accuracy 56.44% vs 56.33% for Transformer++ (loss 0.975 vs 0.977)"),
     (0, "Nucleotide Transformer benchmark: ", "18 tasks × 10 repeats, Bio-xLSTM protocol"),
     (1, "Histone marks, enhancers, promoters, splice sites"),
@@ -79,7 +80,7 @@ fill(progress, "Progress (1/3): pretraining and benchmark", [
     (1, "Weakest task: enhancer or not (−0.21 vs best paper model)"),
 ])
 
-fill(p1, "Progress (2/3): GBST-BERT vs other models", [
+fill(p1, "Progress (2/4): GBST-BERT vs other models", [
     (0, "Blue = GBST-BERT better"),
     (0, "Left: same model without GBST"),
     (0, "Right: best model in the Bio-xLSTM paper"),
@@ -91,7 +92,14 @@ h = Emu(3550000)
 w = Emu(int(h * 2800 / 1639))
 p1.shapes.add_picture(FIG, Emu(p.slide_width - w - 300000), Emu(1080000), w, h)
 
-fill(p2, "Progress (3/3): findings and questions", [
+# results table of all seven models: picture only, as large as fits next to the logo
+p3.shapes[0].text_frame.paragraphs[0].runs[0].text = "Progress (3/4): results of all 7 models"
+p3.shapes[1]._element.getparent().remove(p3.shapes[1]._element)
+th = Emu(3950000)
+tw = Emu(int(th * 3000 / 2256))
+p3.shapes.add_picture(TABLE, Emu((p.slide_width - tw) // 2 + 300000), Emu(1050000), tw, th)
+
+fill(p2, "Progress (4/4): findings and questions", [
     (0, "What GBST learned: ", "98% of its weight on 1-base blocks, so it hardly merges bases"),
     (1, "The gain probably comes from the extra convolution (local context), not from real \"words\""),
     (0, "Implemented / written: ", "one clean model file (gbst_bert.py, tested against the training code)"),
@@ -110,10 +118,10 @@ fill(nxt, "Next steps", [
     (0, "Keep this deck updated with Recap / Progress / Next steps for every meeting"),
 ])
 
-# order: title, recap, progress 1-3, next steps
+# order: title, recap, progress 1-4, next steps
 ids = p.slides._sldIdLst
 items = list(ids)
-order = [items[0], items[1], items[2], items[4], items[5], items[3]]
+order = [items[0], items[1], items[2], items[4], items[6], items[5], items[3]]
 for el in items:
     ids.remove(el)
 for el in order:
