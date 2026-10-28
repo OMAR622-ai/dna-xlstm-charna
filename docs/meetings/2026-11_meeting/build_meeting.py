@@ -5,7 +5,7 @@ import sys
 from pptx import Presentation
 from pptx.util import Emu, Pt
 
-SRC, OUT, FIG, TABLE = sys.argv[1:5]
+SRC, OUT, FIG, TABLE, GB_TABLE, GB_FIG = sys.argv[1:7]
 p = Presentation(SRC)
 title, recap, progress, nxt = p.slides
 
@@ -69,7 +69,9 @@ fill(recap, "Recap", [
 p1 = clone(progress)
 p2 = clone(progress)
 p3 = clone(progress)
-fill(progress, "Progress (1/4): pretraining and benchmark", [
+g1 = clone(progress)
+g2 = clone(progress)
+fill(progress, "Progress (1/6): pretraining and benchmark", [
     (0, "Pretraining (test set): ", "masked-base accuracy 56.44% vs 56.33% for Transformer++ (loss 0.975 vs 0.977)"),
     (0, "Nucleotide Transformer benchmark: ", "18 tasks × 10 repeats, Bio-xLSTM protocol"),
     (1, "Histone marks, enhancers, promoters, splice sites"),
@@ -80,7 +82,7 @@ fill(progress, "Progress (1/4): pretraining and benchmark", [
     (1, "Weakest task: enhancer or not (−0.21 vs best paper model)"),
 ])
 
-fill(p1, "Progress (2/4): GBST-BERT vs other models", [
+fill(p1, "Progress (2/6): GBST-BERT vs other models", [
     (0, "Blue = GBST-BERT better"),
     (0, "Left: same model without GBST"),
     (0, "Right: best model in the Bio-xLSTM paper"),
@@ -93,35 +95,56 @@ w = Emu(int(h * 2800 / 1639))
 p1.shapes.add_picture(FIG, Emu(p.slide_width - w - 300000), Emu(1080000), w, h)
 
 # results table of all seven models: picture only, as large as fits next to the logo
-p3.shapes[0].text_frame.paragraphs[0].runs[0].text = "Progress (3/4): results of all 7 models"
+p3.shapes[0].text_frame.paragraphs[0].runs[0].text = "Progress (3/6): results of all 7 models"
 p3.shapes[1]._element.getparent().remove(p3.shapes[1]._element)
 th = Emu(3950000)
 tw = Emu(int(th * 3000 / 2256))
 p3.shapes.add_picture(TABLE, Emu((p.slide_width - tw) // 2 + 300000), Emu(1050000), tw, th)
 
-fill(p2, "Progress (4/4): findings and questions", [
+# new data: Genomic Benchmarks (Gresova et al. 2023), table of all six models
+g1.shapes[0].text_frame.paragraphs[0].runs[0].text = "Progress (4/6): new data – Genomic Benchmarks"
+fill(g1, g1.shapes[0].text_frame.text, [
+    (0, "8 tasks (Grešová et al. 2023) · human, mouse, worm DNA · 5 splits × 10 epochs · test accuracy"),
+], size=12)
+g1.shapes[1].top, g1.shapes[1].height = Emu(1000000), Emu(320000)
+gh = Emu(3330000)
+gw = Emu(int(gh * 2600 / 1320))
+g1.shapes.add_picture(GB_TABLE, Emu((p.slide_width - gw) // 2 + 250000), Emu(1340000), gw, gh)
+
+fill(g2, "Progress (5/6): does GBST help here?", [
+    (0, "Higher mean than Transformer++ on 5 of 8 tasks"),
+    (0, "Best of all 6 models on 4 of 8"),
+    (0, "Gains small (≤ 0.8 points); clearest on coding and open chromatin (5 of 5 splits)"),
+    (0, "Mouse enhancers: tiny dataset (1,210 sequences), one bad split"),
+    (0, "Paper models are 4× smaller → compare mainly with Transformer++"),
+], size=11)
+g2.shapes[1].width = Emu(2750000)
+ch = Emu(2950000)
+cw = Emu(int(ch * 2200 / 1120))
+g2.shapes.add_picture(GB_FIG, Emu(p.slide_width - cw - 250000), Emu(1150000), cw, ch)
+
+fill(p2, "Progress (6/6): findings and questions", [
     (0, "What GBST learned: ", "98% of its weight on 1-base blocks, so it hardly merges bases"),
     (1, "The gain probably comes from the extra convolution (local context), not from real \"words\""),
     (0, "Implemented / written: ", "one clean model file (gbst_bert.py, tested against the training code)"),
     (1, "Full notebook that re-runs every step on the server; report, poster, slides; all on GitHub"),
-    (0, "Questions for you:", ""),
+    (0, "Questions :", ""),
     (1, "Is this result enough for the practical work, or should I do more experiments?"),
     (1, "Learning-rate search per task, or keep the paper's settings for a fair comparison?"),
     (1, "Longer pretraining (20k steps) or longer sequences (2048)?"),
 ], size=15)
 
 fill(nxt, "Next steps", [
-    (0, "Before the next meeting (depending on your answers):", ""),
+    (0, "Before the next meeting :", ""),
     (1, "Small learning-rate / batch-size search on the weakest tasks (enhancers)"),
     (1, "Check whether GBST merges more bases with longer pretraining or longer sequences"),
     (1, "Finish the written report with the benchmark results"),
-    (0, "Keep this deck updated with Recap / Progress / Next steps for every meeting"),
 ])
 
-# order: title, recap, progress 1-4, next steps
+# order: title, recap, progress 1-6, next steps
 ids = p.slides._sldIdLst
 items = list(ids)
-order = [items[0], items[1], items[2], items[4], items[6], items[5], items[3]]
+order = [items[0], items[1], items[2], items[4], items[6], items[7], items[8], items[5], items[3]]
 for el in items:
     ids.remove(el)
 for el in order:
