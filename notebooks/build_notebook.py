@@ -10,6 +10,10 @@ code = lambda s: cells.append(nbf.v4.new_code_cell(s.strip("\n")))  # noqa: E731
 md(r"""
 # GBST-BERT on human DNA — the complete pipeline
 
+**Author:** Omar Mohamed (K12103822)  
+**Supervisor:** Dr. Sohvi Luukkonen  
+**Practical Work, Institute for Machine Learning, Johannes Kepler University Linz**
+
 **Does a learned tokenizer help a small DNA language model?**
 This notebook goes through every step of the project, explains it, runs it, and shows the results:
 
