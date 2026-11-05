@@ -88,3 +88,28 @@ head = (r"& \multicolumn{2}{c}{GBST-BERT} & \multicolumn{2}{c}{Transformer++} & 
 (TAB / "enhancers.tex").write_text("\n".join([r"\begin{tabular}{lcccccccc}", r"\toprule", head, r"\midrule"] + lines
                                              + [r"\bottomrule", r"\end{tabular}"]) + "\n")
 print(b.T)
+
+# Tables: the tasks (NT sizes and settings from the notebook's output; GB sizes counted on the server)
+import json
+import re
+
+nb = json.load(open(HERE.parent.parent / "notebooks" / "GBST_BERT_full_pipeline.ipynb"))
+html = [ "".join(o["data"]["text/html"]) for c in nb["cells"] if c["cell_type"] == "code" for o in c["outputs"]
+         if "The 18 tasks" in "".join(o.get("data", {}).get("text/html", []))][0]
+text = re.sub(r"\s+", " ", re.sub(r"<style.*?</style>|<[^>]+>", " ", html, flags=re.S))
+rows = re.findall(r"(\S+) (histone mark|enhancer|promoter|splice site) (\d) (\d+) ([\d,]+) ([\d,]+) (MCC|F1|accuracy) (\S+) (\d+)", text)
+assert len(rows) == 18
+lines = [" & ".join([esc(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]]) + r" \\" for r in rows]
+(TAB / "nt_tasks.tex").write_text("\n".join(
+    [r"\begin{tabular}{llcrrrlcc}", r"\toprule",
+     r"Task & Group & Classes & Length & Train & Test & Score & LR & Batch \\", r"\midrule"] + lines
+    + [r"\bottomrule", r"\end{tabular}"]) + "\n")
+
+gb_sizes = {"dummy_mouse_enhancers_ensembl": (968, 242, 2), "demo_coding_vs_intergenomic_seqs": (75000, 25000, 2),
+            "demo_human_or_worm": (75000, 25000, 2), "human_enhancers_cohn": (20843, 6948, 2),
+            "human_enhancers_ensembl": (123872, 30970, 2), "human_ensembl_regulatory": (231348, 57713, 3),
+            "human_ocr_ensembl": (139804, 34952, 2), "human_nontata_promoters": (27097, 9034, 2)}
+lines = [f"{names[t]} & {c} & {a:,} & {e:,}" + r" \\" for t, (a, e, c) in gb_sizes.items()]
+(TAB / "gb_tasks.tex").write_text("\n".join(
+    [r"\begin{tabular}{lcrr}", r"\toprule", r"Task & Classes & Train & Test \\", r"\midrule"] + lines
+    + [r"\bottomrule", r"\end{tabular}"]) + "\n")
