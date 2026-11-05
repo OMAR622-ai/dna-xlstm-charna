@@ -232,8 +232,8 @@ $z_i=\sum_{k}\hat P_{i,k}\,B_{i,k}$. As in ChaRNABERT there is no downsampling, 
 vector per base and the encoder sees the full sequence length.
 
 GBST has 70,144 parameters: embedding 3,072, convolution 1,280, pointwise layer 65,536, scorer 256.
-The pointwise layer is not in ChaRNABERT's equations; we infer it from the paper's parameter table
-(Appendix~\ref{app:dev}). We set $M=4$ ourselves, as the paper does not state the maximum block size.
+The pointwise layer is not in ChaRNABERT's equations; we infer it from the paper's parameter table,
+which counts $d\cdot M+d^2$ weights for this stage. We set $M=4$ ourselves, as the paper does not state the maximum block size.
 
 \subsection{Encoder and pretraining objective}
 
@@ -465,32 +465,104 @@ sequences, and one untuned setting, and we cannot separate these factors.
 
 \section{Discussion and limitations}\label{sec:disc}
 
-\textbf{What can be claimed.} GBST-BERT is a competitive small DNA model: on the NT benchmark it matches
-or exceeds published 2M models on most tasks. It improves on its control on the NT benchmark, clearly
-on histone marks, and only marginally on Genomic Benchmarks.
+\textbf{Answers to the research questions.} \emph{RQ1:} GBST does not measurably improve masked-base
+prediction; the final difference of 0.11 percentage points is too small to interpret with one run per
+model. \emph{RQ2:} on the NT benchmark GBST-BERT is ahead of its control on 16 of 18 tasks and has the
+best mean of seven models on 13, while on Genomic Benchmarks the difference is small and mixed.
+\emph{RQ3:} GBST does not form multi-base units; it settles on single bases.
+
+\textbf{Where the gains appear.} The NT gains are uneven. GBST-BERT has the best mean on 8 of 10 histone
+tasks and on all 3 splice tasks, and the differences from the control are largest on histone marks.
+Promoter scores are close to their ceiling for every model, so these tasks separate models little.
+Both groups with large gains may depend on sequence patterns that a short filter can capture, which
+would be compatible with a role for the convolution, but we have not tested this link.
+
+\textbf{Pretraining loss did not predict downstream behaviour.} The two models are nearly identical in
+masked-base prediction, yet they differ strongly on several downstream tasks. Pretraining loss alone
+would therefore have hidden the differences reported here. One possible reason is that the loss
+averages over all bases, most of which carry little task-relevant signal, whereas each task depends on
+specific patterns. This suggests evaluating small DNA models on downstream tasks as well as on loss.
+
+\textbf{Why GBST may prefer single bases.} We can offer hypotheses only. MLM asks for one base at each
+position, which may favour the block that keeps that position's identity most directly. Because masking
+acts on the input, longer blocks around a masked base also mix in the \texttt{[MASK]} token. The outcome
+also depends on training conditions: after 500 steps, the weight on single bases was 72\% at learning
+rate $5\mathrm{e}{-4}$ and 98\% at $2\mathrm{e}{-3}$. As we selected the learning rate by validation
+loss, the better-predicting of these two settings is also the one that uses longer blocks less. Whether GBST
+would use longer blocks with another objective, a longer context or downsampling remains open.
+
+\textbf{Why the effect may be smaller on Genomic Benchmarks.} Several factors differ from the NT
+benchmark and cannot be separated here. Some tasks have far more training data, which may reduce the
+value of any input bias. All tasks used one setting that was not tuned for them, and there are 5 seeds
+rather than 10. Several accuracies are also close to their ceiling. The result is a useful caution: the
+NT advantage should not be assumed to generalize to every DNA classification task.
+
+\textbf{Training stability.} GBST-BERT is not uniformly more robust. It collapsed to one class on splice
+tasks at the paper's learning rates, and some histone tasks show wide ranges between seeds. Transformer++
+shows such ranges as well, for example on splice donors ($\pm0.117$). Mean scores should therefore be
+read together with their ranges, and single runs can mislead on these tasks.
+
+\textbf{What the enhancer result means for benchmarking.} The diagnosis in Section~\ref{sec:enh} applies
+to any model evaluated on these two tasks, including published ones. High validation scores are not
+evidence of good test performance here, duplicated sequences inflate test scores, and with 400 test
+sequences small differences are unreliable. Our analysis does not show that these tasks are unusable,
+and it does not explain why some models score higher on them.
 
 \textbf{What cannot be claimed yet.} We have not shown that \emph{tokenization} causes the gain. GBST
-reads single bases, so learned multi-base units cannot explain it; we suspect the convolution, since
-local context suits motif-driven tasks, but this is a hypothesis. In addition, the two models differ
-in normalization and in how their pretraining learning rate was chosen. The decisive experiment is
-GBST-BERT with GBST replaced by an embedding table, under otherwise identical settings. The code
-supports it (\texttt{TOKENIZER=embedding}) but it was not run. A further variant keeping only the
-convolution would isolate its contribution.
+reads single bases, so learned multi-base units cannot explain it. We suspect the convolution, but this
+is a hypothesis. The two models also differ in normalization and in how their pretraining learning rate
+was chosen, and either difference could contribute. The comparison with published models is also
+limited: they were tuned per model, while we reused settings chosen for DNA-xLSTM-PH, and on Genomic
+Benchmarks they are four times smaller than ours.
 
-\textbf{Further limitations.} Each model was pretrained once, so variation from pretraining is
-unmeasured and the fine-tuning repeats capture only part of the uncertainty. Fine-tuning settings came
-from a different architecture (DNA-xLSTM-PH) and were not tuned for ours, except on splice tasks.
-GBST-BERT's first 3,000 pretraining steps used a data loader with a bug that corrupted 0.35\% of
-sequences (Appendix~\ref{app:dev}). We tested only one scale and context length, and block sizes up
-to 4. Our results concern classification benchmarks, not any clinical use.
+\textbf{Further limitations.}
+\begin{itemize}
+  \item \emph{One pretraining run per model.} Variation from pretraining is unmeasured, and the
+  fine-tuning repeats capture only part of the uncertainty.
+  \item \emph{Unequal data exposure.} A data-loader bug corrupted 0.35\% of sequences during GBST-BERT's
+  first 3,000 steps. Corrupted reads stayed within their data split. Transformer++ was trained after the
+  fix, so only GBST-BERT saw this data.
+  \item \emph{Reading of ChaRNABERT.} We added a pointwise layer inferred from its parameter table, used
+  blocks that contain each position, used standard SwiGLU, and chose the maximum block size of 4
+  ourselves. A different reading could change the results.
+  \item \emph{Fine-tuning details.} Settings came from another architecture and were tuned only on splice
+  tasks. On Genomic Benchmarks, padded positions are not masked, and the repository's schedule assumes a
+  larger training set than is used, so the learning rate does not reach its minimum. These details
+  apply equally to both of our models.
+  \item \emph{Scope.} We tested one model size, one context length and classification tasks only.
+  Nothing here supports clinical use.
+\end{itemize}
 
 \section{Conclusion}
 
-A learned tokenizer did not behave as motivated on human DNA: it chose single bases. Even so, the
-resulting model is competitive at 2M parameters and beats its control on most NT tasks, with a much
-smaller effect on a second benchmark. The next steps are the ablation above and a repeat of pretraining
-with other seeds. Separately, the two NT enhancer tasks should be interpreted with care, given their
-train--test mismatch and duplicated sequences.
+We transferred ChaRNABERT's learned tokenizer to human DNA at the 2M-parameter scale of DNA-xLSTM and
+compared it with a same-shape control in pretraining and on 26 downstream tasks. Three findings stand
+out. First, GBST-BERT is a competitive small DNA model: it has the best mean of seven models on 13 of 18
+NT tasks, although its advantage is much smaller on Genomic Benchmarks. Second, the tokenizer did not
+behave as motivated: it chose single bases and formed no multi-base units, so the improvement, if it
+comes from GBST at all, must have another source. Third, the weak enhancer scores coincide with a
+train--test mismatch and duplicated sequences in the benchmark, which matters for anyone comparing
+models on these two tasks.
+
+The most useful next experiments follow directly from these findings:
+\begin{enumerate}
+  \item \emph{Ablation of GBST.} Train the same model with an embedding table instead of GBST. If it
+  matches GBST-BERT, the gain comes from normalization or tuning rather than from GBST.
+  \item \emph{Convolution only.} Keep the convolution and remove the block selection. If this variant
+  matches GBST-BERT, local mixing explains the gain, and a much simpler module would be enough.
+  \item \emph{Repeated pretraining.} Pretrain each model with several seeds to measure the variation
+  that is currently unknown.
+  \item \emph{Conditions that favour longer blocks.} Test other learning rates, longer contexts and
+  other objectives such as UL2, which the code already supports.
+  \item \emph{Fairer fine-tuning.} Run the same hyperparameter search for our models as the paper ran
+  for its own.
+  \item \emph{Cleaner enhancer evaluation.} Remove duplicates and build a validation set that reflects
+  the test distribution.
+\end{enumerate}
+
+The practical lesson of this work is that a good benchmark score does not by itself explain what a model
+has learned. Looking inside the model and at the data changed both of the interpretations we started
+with: that GBST learns useful DNA units, and that weak enhancer scores are a modelling problem.
 
 \section*{Code and reproducibility}
 
@@ -546,28 +618,5 @@ Table~\ref{tab:settings} lists the main settings and their sources.
   \captionof{table}{The 8 Genomic Benchmarks tasks.}
   \input{tables/gb_tasks.tex}
 \end{center}
-
-\section{Differences from the papers and known issues}\label{app:dev}
-
-\begin{itemize}
-  \item \textbf{ChaRNABERT Eq.~1} describes a depthwise convolution, but its Table 9 counts $d\cdot M+d^2$
-  weights, which implies an additional pointwise layer. We include it.
-  \item \textbf{ChaRNABERT Eq.~3} read literally assigns a position blocks that do not contain it. We use
-  blocks containing the position, as the text on offsets describes.
-  \item \textbf{ChaRNABERT Eq.~9} differs from standard SwiGLU, which the text cites. We use the standard form.
-  \item \textbf{Attention.} We use PyTorch's scaled dot-product attention instead of FlashAttention 2,
-  which our GPUs do not support; the attention computed is the same.
-  \item \textbf{NT data loader.} The repository's loader mixed all 18 tasks after a change on Hugging
-  Face (461,850 examples instead of e.g.\ 5,509); it now loads each task's own file.
-  \item \textbf{Genome reader.} Parallel reader processes shared one open file and sometimes read wrong
-  bases: 0.35\% of sequences with 2 workers per GPU, as used in the first part of training. Wrong reads
-  stayed inside their data split. After the fix, GBST-BERT resumed from step 3,000 and Transformer++
-  was trained from scratch, so only GBST-BERT saw affected data.
-  \item \textbf{Genomic Benchmarks schedule.} The repository's dataset configuration gives each task's
-  total size as its training length, so the cosine schedule is longer than the real training run
-  and the learning rate does not reach its minimum. This is the same for both of our models.
-  \item \textbf{Validation at step 10,000.} After resuming, GBST-BERT's counter ran one step ahead and
-  skipped this check; it was measured afterwards on the final model with the same settings.
-\end{itemize}
 
 \end{document}
