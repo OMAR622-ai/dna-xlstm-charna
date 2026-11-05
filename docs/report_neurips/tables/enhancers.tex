@@ -1,0 +1,12 @@
+\begin{tabular}{lcccccccc}
+\toprule
+& \multicolumn{2}{c}{GBST-BERT} & \multicolumn{2}{c}{Transformer++} & \multicolumn{3}{c}{4-mer logistic regression} & Test seqs. \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-8}
+Task & val. & test & val. & test & val. & test & test, no copies & in train \\
+\midrule
+enhancers & 0.871 & 0.336 & 0.899 & 0.368 & 0.794 & 0.436 & 0.319 & 100/400 \\
+enhancers\_types & 0.789 & 0.430 & 0.788 & 0.384 & 0.777 & 0.299 & 0.168 & 100/400 \\
+promoter\_all & 0.973 & 0.971 & 0.970 & 0.968 & 0.807 & 0.802 & 0.802 & 21/5920 \\
+H3 & 0.811 & 0.815 & 0.787 & 0.801 & 0.634 & 0.631 & 0.631 & 0/1497 \\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,92 @@
+\begin{thebibliography}{10}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Dalla-Torre et~al.(2023)Dalla-Torre, Gonzalez, Mendoza-Revilla,
+  Carranza, Grzywaczewski, Oteri, Dallago, Trop, de~Almeida, Sirelkhatim,
+  et~al.]{dallatorre2023nt}
+Hugo Dalla-Torre, Liam Gonzalez, Javier Mendoza-Revilla, Nicolas~Lopez
+  Carranza, Adam~Henryk Grzywaczewski, Francesco Oteri, Christian Dallago, Evan
+  Trop, Bernardo~P. de~Almeida, Hassan Sirelkhatim, et~al.
+\newblock The nucleotide transformer: Building and evaluating robust foundation
+  models for human genomics.
+\newblock \emph{bioRxiv}, pages 2023--01, 2023.
+
+\bibitem[Devlin et~al.(2019)Devlin, Chang, Lee, and Toutanova]{devlin2019bert}
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova.
+\newblock {BERT}: Pre-training of deep bidirectional transformers for language
+  understanding.
+\newblock In \emph{Proceedings of the 2019 Conference of the North American
+  Chapter of the Association for Computational Linguistics}, pages 4171--4186,
+  2019.
+
+\bibitem[Gre{\v{s}}ov{\'a} et~al.(2023)Gre{\v{s}}ov{\'a}, Martinek,
+  {\v{C}}ech{\'a}k, {\v{S}}ime{\v{c}}ek, and Alexiou]{gresova2023genomic}
+Katar{\'\i}na Gre{\v{s}}ov{\'a}, Vlastimil Martinek, David {\v{C}}ech{\'a}k,
+  Petr {\v{S}}ime{\v{c}}ek, and Panagiotis Alexiou.
+\newblock Genomic benchmarks: a collection of datasets for genomic sequence
+  classification.
+\newblock \emph{BMC Genomic Data}, 24\penalty0 (1):\penalty0 25, 2023.
+
+\bibitem[Morales-Pastor et~al.(2024)Morales-Pastor, V{\'a}zquez-Reza,
+  Wiecz{\'o}r, Valverde, Gil-Sorribes, Miquel-Oliver, Ciudad, and
+  Molina]{moralespastor2024charnabert}
+Adri{\'a}n Morales-Pastor, Raquel V{\'a}zquez-Reza, Mi{\l}osz Wiecz{\'o}r,
+  Cl{\`a}udia Valverde, Manel Gil-Sorribes, Bertran Miquel-Oliver, {\'A}lvaro
+  Ciudad, and Alexis Molina.
+\newblock Character-level tokenizations as powerful inductive biases for {RNA}
+  foundational models.
+\newblock \emph{arXiv preprint arXiv:2411.11808}, 2024.
+
+\bibitem[Nguyen et~al.(2023)Nguyen, Poli, Faizi, Thomas, Wornow, Birch-Sykes,
+  Massaroli, Patel, Rabideau, Bengio, et~al.]{nguyen2023hyenadna}
+Eric Nguyen, Michael Poli, Marjan Faizi, Armin Thomas, Michael Wornow, Callum
+  Birch-Sykes, Stefano Massaroli, Aman Patel, Clayton Rabideau, Yoshua Bengio,
+  et~al.
+\newblock {HyenaDNA}: Long-range genomic sequence modeling at single nucleotide
+  resolution.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, volume~36, pages 43177--43201, 2023.
+
+\bibitem[Schiff et~al.(2024)Schiff, Kao, Gokaslan, Dao, Gu, and
+  Kuleshov]{schiff2024caduceus}
+Yair Schiff, Chia~Hsiang Kao, Aaron Gokaslan, Tri Dao, Albert Gu, and Volodymyr
+  Kuleshov.
+\newblock Caduceus: Bi-directional equivariant long-range {DNA} sequence
+  modeling.
+\newblock In \emph{Proceedings of the 41st International Conference on Machine
+  Learning (ICML)}, volume 235, pages 43632--43648, 2024.
+
+\bibitem[Schmidinger et~al.(2024)Schmidinger, Schneckenreiter, Seidl,
+  Schimunek, Hoedt, Brandstetter, Mayr, Luukkonen, Hochreiter, and
+  Klambauer]{schmidinger2024bioxlstm}
+Niklas Schmidinger, Lisa Schneckenreiter, Philipp Seidl, Johannes Schimunek,
+  Pieter-Jan Hoedt, Johannes Brandstetter, Andreas Mayr, Sohvi Luukkonen, Sepp
+  Hochreiter, and G{\"u}nter Klambauer.
+\newblock {Bio-xLSTM}: Generative modeling, representation and in-context
+  learning of biological and chemical sequences.
+\newblock \emph{arXiv preprint arXiv:2411.04165}, 2024.
+
+\bibitem[Shazeer(2020)]{shazeer2020glu}
+Noam Shazeer.
+\newblock {GLU} variants improve transformer.
+\newblock \emph{arXiv preprint arXiv:2002.05202}, 2020.
+
+\bibitem[Su et~al.(2024)Su, Ahmed, Lu, Pan, Bo, and Liu]{su2024roformer}
+Jianlin Su, Murtadha Ahmed, Yu~Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu.
+\newblock {RoFormer}: Enhanced transformer with rotary position embedding.
+\newblock \emph{Neurocomputing}, 568:\penalty0 127063, 2024.
+
+\bibitem[Tay et~al.(2022)Tay, Tran, Ruder, Gupta, Chung, Bahri, Qin,
+  Baumgartner, Yu, and Metzler]{tay2022charformer}
+Yi~Tay, Vinh~Q. Tran, Sebastian Ruder, Jai Gupta, Hyung~Won Chung, Dara Bahri,
+  Zhen Qin, Simon Baumgartner, Cong Yu, and Donald Metzler.
+\newblock Charformer: Fast character transformers via gradient-based subword
+  tokenization.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2022.
+
+\end{thebibliography}

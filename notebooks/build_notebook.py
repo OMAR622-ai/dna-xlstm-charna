@@ -24,7 +24,9 @@ This notebook goes through every step of the project, explains it, runs it, and 
 | 7 | Inside the model: what GBST learned, and where the model is confident | **yes, re-computed** |
 | 8 | Prediction tasks: 18 tasks of the Nucleotide Transformer benchmark, 10 repeats | one job re-run; all 384 saved runs analysed |
 | 9 | Results tables and figures, compared with the Bio-xLSTM paper | yes |
-| 10 | Summary | — |
+| 10 | Why enhancers are weak: validation vs. test scores, duplicates, a k-mer baseline | **yes, re-computed** |
+| 11 | Second benchmark: 8 Genomic Benchmarks tasks, 5 repeats | one job re-run; all 80 saved runs analysed |
+| 12 | Summary | — |
 
 **How to run it** (on `student07`):
 
@@ -36,9 +38,9 @@ jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeou
 ```
 
 With the default switches this takes about 30 minutes on one GPU (most of it is the re-run of one
-fine-tuning job in Part 8). The two long steps, pretraining (≈1 day per model on 4 GPUs) and the
-full benchmark (≈2 days on 4 GPUs), are run by the exact same scripts when their switch is set to
-`True`; otherwise the notebook loads the results of the original runs from `outputs/`.
+fine-tuning job in Part 8). The long steps, pretraining (≈1 day per model on 4 GPUs) and the two
+full benchmarks (≈2 days and ≈16 hours), are run by the exact same scripts when their switch is
+set to `True`; otherwise the notebook loads the results of the original runs from `outputs/`.
 
 **Papers.** ChaRNABERT: Morales-Pastor et al. 2024, arXiv:2411.11808 (the model).
 Bio-xLSTM: Schmidinger et al. 2024, arXiv:2411.04165 (pretraining protocol, benchmark protocol,
@@ -49,8 +51,8 @@ comparison values). Charformer: Tay et al. 2021, arXiv:2106.12672 (GBST).
 md(r"""
 ## 1. Setup
 
-**Switches.** Only these lines need changing. `GPU` must be a free GPU: on `student07` GPU 0
-belongs to another user, so the project used GPUs 1–4 (check with `nvidia-smi`).
+**Switches.** Only these lines need changing. `GPU` must be a free GPU: `student07` is shared
+with other users, so check with `nvidia-smi` first.
 """)
 code(r"""
 GPU = "1"                 # one free GPU for the steps that run inside this notebook
@@ -58,10 +60,12 @@ TRAIN_GPUS = "1,2,3,4"    # GPUs for the long runs (pretraining, full benchmark)
 
 RUN_PRETRAINING = False   # True: pretrain both models again from scratch (≈1 day per model on 4 GPUs)
 RUN_NT_BENCHMARK = False  # True: all 18 tasks × 2 models × 10 repeats again (≈2 days on 4 GPUs)
-RUN_ONE_FINETUNE = True   # True: re-run one fine-tuning job (GBST-BERT, task H3, repeat 1; ≈16 min)
+RUN_GB_BENCHMARK = False  # True: all 8 Genomic Benchmarks tasks × 2 models × 5 repeats again (≈16 hours on 3 GPUs)
+RUN_ONE_FINETUNE = True   # True: re-run one NT fine-tuning job (GBST-BERT, task H3, repeat 1; ≈16 min)
+RUN_ONE_GB_FINETUNE = True  # True: re-run one Genomic Benchmarks job (GBST-BERT, mouse enhancers, repeat 1; ≈3 min)
 """)
 code(r"""
-import os, sys, re, json, time, math, pathlib, subprocess, importlib.util, warnings
+import os, sys, re, json, time, math, shutil, pathlib, subprocess, importlib.util, warnings, itertools, random
 os.environ["CUDA_VISIBLE_DEVICES"] = GPU          # must be set before torch is imported
 warnings.filterwarnings("ignore")
 
@@ -91,6 +95,7 @@ FASTA = REPO / "data/hg38/hg38.ml.fa"
 BED = REPO / "data/hg38/human-sequences.bed"
 PRETRAIN = REPO / "outputs/pretrain/hg38"
 NT_RESULTS = REPO / "outputs/downstream/nt_cv10_ep20"
+GB_RESULTS = REPO / "outputs/downstream/gb_cv5_ep10"
 
 # One look for every figure: blue = GBST-BERT, orange = Transformer++, green = paper models
 BLUE, ORANGE, GREEN, GREY = "#2a78d6", "#eb6834", "#1baf7a", "#a3a9b5"
@@ -233,8 +238,9 @@ md(r"""
 3. **Head**: a linear layer that scores A, C, G, T (and the special tokens) at every position.
 
 **Control model: Transformer++** — the 2-million-parameter Transformer of the Bio-xLSTM paper
-(Table A3), same width, depth and heads, with a plain lookup table instead of GBST. Comparing
-the two shows what GBST adds.
+(Table A3), same width, depth and heads, with a plain lookup table instead of GBST. It is a close
+control, not a perfect one: it also uses RMSNorm instead of LayerNorm + QK normalisation, and its
+pretraining learning rate is the paper's value, whereas GBST-BERT's was tuned (Part 5).
 
 The cell below builds both models with the repository's code, loads the final weights
 (step 10,000), and checks that the one-file version `gbst_bert.py` gives exactly the same output.
@@ -607,6 +613,7 @@ def run_scores(metrics_csv):
 
 if RUN_ONE_FINETUNE:
     lr, batch = TABLE_A5["H3"]
+    shutil.rmtree(REPO / "outputs/downstream/nt_notebook_rerun", ignore_errors=True)  # else the script skips the job
     shell(nt_command("charna", "H3", lr, batch, 1, "./outputs/downstream/nt_notebook_rerun", GPU),
           OUT / "finetune_H3_seed1.log", cwd=REPO / "scripts_downstream", env={"CUDA_VISIBLE_DEVICES": GPU})
     rel = f"H3/full_charna_mlm_ph/LR-{lr}_BATCH_SIZE-{batch}/seed-1/metrics.csv"
@@ -725,10 +732,16 @@ display(table.style.apply(highlight, axis=None)
 mean.to_csv(OUT / "nt_means.csv"); spread.to_csv(OUT / "nt_ranges.csv"); table.to_csv(OUT / "nt_table.csv")
 
 better_than_control = int((mean["GBST-BERT"] > mean["Transformer++"] + 5e-4).sum())
+
+def sign_test(wins_, n):
+    # Two-sided sign test: how likely is a split this uneven if each task were a coin flip?
+    k = min(wins_, n - wins_)
+    return min(1.0, 2 * sum(math.comb(n, i) for i in range(k + 1)) / 2 ** n)
 display(Markdown(f"**GBST-BERT has the best mean on {int(wins['GBST-BERT'])} of 18 tasks** "
                  f"(xLSTM-PH {int(wins['xLSTM-PH'])}, Mamba-PH {int(wins['Mamba-PH'])}, Mamba-PS "
-                 f"{int(wins['Mamba-PS'])}), and beats the same model without GBST (Transformer++) on "
-                 f"**{better_than_control} of 18**."))
+                 f"{int(wins['Mamba-PS'])}), and beats the control model Transformer++ on "
+                 f"**{better_than_control} of 18** (two-sided sign test over tasks: "
+                 f"p = {sign_test(better_than_control, 18):.4f}; the tasks are related, so this is only a guide)."))
 """)
 code(r"""
 # Figure 1: every task, our two models next to the best paper model (mean and range over repeats)
@@ -782,7 +795,186 @@ fig.tight_layout(); save(fig, "nt_differences"); plt.show()
 
 # =============================================================================================
 md(r"""
-## 10. Summary
+## 10. Why are enhancers weak?
+
+Enhancers are the one clear weakness in Part 9. The first clue is in the training logs: on every
+task we can compare the score on the **validation** split (10% taken at random from the training
+file) with the score on the **test** file.
+""")
+code(r"""
+rows = []
+for task in TASKS:
+    row = {"task": task, "score": METRIC[task]}
+    for name in OURS:
+        runs = all_settings[(task, name)][ours[(task, name)]["setting"]]
+        row[f"{name} validation"] = np.mean([v for v, _ in runs])
+        row[f"{name} test"] = np.mean([t for _, t in runs])
+        row[f"{name} gap"] = row[f"{name} validation"] - row[f"{name} test"]
+    rows.append(row)
+gaps = pd.DataFrame(rows).set_index("task")
+gaps.to_csv(OUT / "validation_test_gap.csv")
+gap_cols = [c for c in gaps.columns if c != "score"]
+display(gaps.style.format("{:.3f}", subset=gap_cols)
+        .background_gradient(subset=["GBST-BERT gap", "Transformer++ gap"], cmap="Oranges", vmin=0, vmax=0.55)
+        .set_caption("Mean best validation score, mean test score, and their difference (10 repeats)"))
+
+fig, ax = plt.subplots(figsize=(11, 4.6))
+x = np.arange(len(TASKS))
+ax.bar(x - 0.2, gaps["GBST-BERT gap"], 0.4, color=BLUE, label="GBST-BERT")
+ax.bar(x + 0.2, gaps["Transformer++ gap"], 0.4, color=ORANGE, label="Transformer++")
+ax.set_xticks(x, TASKS, rotation=60, ha="right"); ax.axhline(0, color=TEXT, lw=1); ax.grid(axis="x", visible=False)
+ax.set_ylabel("validation score minus test score"); ax.legend()
+ax.set_title("Only the two enhancer tasks score far lower on test than on validation")
+save(fig, "validation_test_gap"); plt.show()
+""")
+md(r"""
+If this gap were a problem of our Transformer, a completely different and much simpler model
+should not show it. So we train a **plain 4-mer baseline** (logistic regression on the frequencies
+of the 256 possible 4-mers; no neural network, no pretraining) on 90% of the training file and
+score it on the other 10% and on the test file. We also count exact copies of test sequences in
+the training file, and whether copies agree on their label. Two tasks without a gap are controls.
+""")
+code(r"""
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import matthews_corrcoef
+
+def kmer_features(seqs, k=4):
+    index = {"".join(p): i for i, p in enumerate(itertools.product("ACGT", repeat=k))}
+    X = np.zeros((len(seqs), len(index)), np.float32)
+    for n, s in enumerate(seqs):
+        for i in range(len(s) - k + 1):
+            j = index.get(s[i:i + k])
+            if j is not None:
+                X[n, j] += 1
+    return X / np.maximum(X.sum(1, keepdims=True), 1)
+
+rows = []
+for task in ["enhancers", "enhancers_types", "promoter_all", "H3"]:
+    data = {split: load_dataset("InstaDeepAI/nucleotide_transformer_downstream_tasks",
+                                data_files={split: f"{task}/{split}.parquet"}, split=split) for split in ("train", "test")}
+    train = list(zip(data["train"]["sequence"], data["train"]["label"]))
+    test_set = list(zip(data["test"]["sequence"], data["test"]["label"]))
+    labels = {}
+    for seq, label in train:
+        labels.setdefault(seq, set()).add(label)
+    copies = [(seq, label) for seq, label in test_set if seq in labels]
+    random.Random(0).shuffle(train)
+    n_val = len(train) // 10
+    val, fit = train[:n_val], train[n_val:]
+    clf = LogisticRegression(max_iter=2000, C=10.0).fit(kmer_features([s for s, _ in fit]), [l for _, l in fit])
+    score = lambda part: matthews_corrcoef([l for _, l in part], clf.predict(kmer_features([s for s, _ in part])))
+    no_copies = [(seq, label) for seq, label in test_set if seq not in labels]
+    rows.append({"task": task, "train sequences": len(train), "unique": len(labels), "test sequences": len(test_set),
+                 "test copies in train": len(copies), "copies with same label": sum(l in labels[s] for s, l in copies),
+                 "4-mer MCC, validation": score(val), "4-mer MCC, test": score(test_set),
+                 "4-mer MCC, test without copies": score(no_copies)})
+baseline = pd.DataFrame(rows).set_index("task")
+baseline.to_csv(OUT / "kmer_baseline.csv")
+display(baseline.style.format({c: "{:.3f}" for c in baseline.columns if "MCC" in c})
+        .set_caption("Duplicates and a plain 4-mer logistic regression (one 90/10 split)"))
+""")
+md(r"""
+**Reading.** The plain 4-mer model shows the same pattern: a large validation-to-test drop on both
+enhancer tasks and none on the controls. So the gap belongs to the **dataset**, not to the
+Transformer: what separates the classes in the training file carries over only partly to the test
+file. It is not simply that test sequences are unfamiliar, because a quarter of them are exact
+copies of training sequences (with the same label), and the 4-mer score falls further once those
+copies are removed. This also means validation scores cannot be trusted for choosing a model on
+these two tasks. With 400 test sequences the scores are also noisy. What this analysis does not
+explain is why some published models reach a higher test score on these tasks.
+""")
+
+# =============================================================================================
+md(r"""
+## 11. Second benchmark: Genomic Benchmarks
+
+To check the models on data that played no part in the choices above, both were also fine-tuned on
+the **8 Genomic Benchmarks tasks** (Grešová et al. 2023,
+[github.com/ML-Bioinfo-CEITEC/genomic_benchmarks](https://github.com/ML-Bioinfo-CEITEC/genomic_benchmarks)),
+which add mouse and worm DNA, open chromatin, and coding vs. non-coding DNA.
+
+**Protocol** (Bio-xLSTM App. C.5, `scripts_charna/server/run_gb_benchmark.sh`): PH, mean pooling + a
+linear layer, **10 epochs, 5 repeats**, best validation epoch tested, top-1 accuracy. Sequences
+longer than 1,024 bases are cut to 1,024 (repository setting).
+
+**Two limits of this comparison.** The paper publishes no per-task settings here, so every task uses
+one setting from its search grid (learning rate 1e-3, batch 128). And the paper's models on this
+benchmark have 500k parameters, while ours have 2M, so its values (Table A2, stored in
+`notebooks/bioxlstm_tableA2_gb.csv`) are only a reference; the comparison that counts is GBST-BERT
+vs. Transformer++.
+""")
+code(r"""
+GB_NAMES = {"dummy_mouse_enhancers_ensembl": "Mouse enhancers", "demo_coding_vs_intergenomic_seqs": "Coding vs intergenomic",
+            "demo_human_or_worm": "Human vs worm", "human_enhancers_cohn": "Human enhancers (Cohn)",
+            "human_enhancers_ensembl": "Human enhancers (Ensembl)", "human_ensembl_regulatory": "Human regulatory (3 classes)",
+            "human_ocr_ensembl": "Human open chromatin (OCR)", "human_nontata_promoters": "Human non-TATA promoters"}
+GB_SETTING = "LR-1e-3_BATCH_SIZE-128"
+
+if RUN_ONE_GB_FINETUNE:
+    task = "dummy_mouse_enhancers_ensembl"
+    shutil.rmtree(REPO / "outputs/downstream/gb_notebook_rerun", ignore_errors=True)
+    shell(f"CUDA_VISIBLE_DEVICES={GPU} MODEL=charna PRETRAIN_DIR=../outputs/pretrain/hg38/full_charna_mlm "
+          f"PRETRAINED_PATH={PRETRAIN}/full_charna_mlm/checkpoints/last.ckpt TASKS={task} LRS=1e-3 BATCH_SIZES=128 "
+          f"SEEDS=1 OUT_ROOT=./outputs/downstream/gb_notebook_rerun bash run_genomics_charna.sh",
+          OUT / "finetune_gb_seed1.log", cwd=REPO / "scripts_downstream", env={"CUDA_VISIBLE_DEVICES": GPU})
+    rel = f"{task}/full_charna_mlm_ph/{GB_SETTING}/seed-1/metrics.csv"
+    new, old = run_scores(REPO / "outputs/downstream/gb_notebook_rerun" / rel), run_scores(GB_RESULTS / rel)
+    display(pd.DataFrame({"best validation accuracy": [new[0], old[0]], "test accuracy": [new[1], old[1]]},
+                         index=["re-run now", "original run"]).style.format("{:.4f}")
+            .set_caption("GBST-BERT, mouse enhancers, repeat 1"))
+
+if RUN_GB_BENCHMARK:
+    shell(f"GPUS='{TRAIN_GPUS.replace(',', ' ')}' GB_OUT_ROOT=./outputs/downstream/gb_notebook "
+          f"OUT_DIR={REPO}/outputs/downstream/gb_queue_notebook bash run_gb_benchmark.sh '1 2 3 4 5'",
+          OUT / "gb_benchmark.log", cwd=REPO / "scripts_charna/server")
+    GB_RESULTS = REPO / "outputs/downstream/gb_notebook"
+
+gb_scores = {name: {t: {int(f.parent.name.split("-")[1]): run_scores(f)[1]
+                        for f in (GB_RESULTS / t / folder / GB_SETTING).glob("seed-*/metrics.csv")}
+                    for t in GB_NAMES} for name, folder in OURS.items()}
+gb_paper = pd.read_csv(REPO / "notebooks/bioxlstm_tableA2_gb.csv").set_index("task")
+GB_PAPER = ["Mamba-PH-500k", "xLSTM-PH-500k", "Mamba-PS-500k", "xLSTM-PS-500k"]
+gb_mean = pd.DataFrame({m: gb_paper[f"{m} mean"] for m in GB_PAPER}).loc[list(GB_NAMES)]
+gb_range = pd.DataFrame({m: gb_paper[f"{m} range"] for m in GB_PAPER}).loc[list(GB_NAMES)]
+for name in OURS:
+    gb_mean[name] = [np.mean(list(gb_scores[name][t].values())) for t in GB_NAMES]
+    gb_range[name] = [np.ptp(list(gb_scores[name][t].values())) for t in GB_NAMES]
+gb_splits = pd.Series({t: sum(gb_scores["GBST-BERT"][t][k] > gb_scores["Transformer++"][t][k]
+                              for k in gb_scores["GBST-BERT"][t]) for t in GB_NAMES})
+gb_is_best = gb_mean.ge(gb_mean.max(axis=1) - 5e-4, axis=0)
+gb_wins = gb_is_best.sum()
+gb_table = pd.DataFrame({m: [f"{a:.3f} ± {b:.3f}" for a, b in zip(gb_mean[m], gb_range[m])] for m in gb_mean}, index=gb_mean.index)
+gb_table["GBST-BERT better (of 5 splits)"] = gb_splits
+show_gb = gb_table.rename(index=GB_NAMES)
+show_gb.loc["Tasks with the best mean"] = [str(int(gb_wins[m])) for m in gb_mean] + [""]
+display(show_gb.style.set_caption("Test accuracy, mean ± (max − min) over 5 repeats. Paper models have 500k parameters, ours 2M."))
+gb_mean.to_csv(OUT / "gb_means.csv"); gb_range.to_csv(OUT / "gb_ranges.csv"); gb_table.to_csv(OUT / "gb_table.csv")
+
+gb_diff = 100 * (gb_mean["GBST-BERT"] - gb_mean["Transformer++"])
+gb_better = int((gb_diff > 0).sum())
+fig, ax = plt.subplots(figsize=(10, 4.4))
+y = np.arange(len(gb_diff))[::-1]
+ax.barh(y, gb_diff, color=[BLUE if d > 0 else GREY for d in gb_diff], height=0.6)
+for yi, d, k in zip(y, gb_diff, gb_splits):
+    ax.text(d + (0.05 if d >= 0 else -0.05), yi, f"{d:+.1f}", va="center", ha="left" if d >= 0 else "right", fontsize=9.5)
+    ax.text(2.0, yi, f"{k} of 5", va="center", ha="center", fontsize=9.5)
+ax.text(2.0, len(gb_diff) - 0.4, "GBST better\non splits", ha="center", fontsize=9, color=MUTED)
+ax.set_yticks(y, [GB_NAMES[t] for t in gb_diff.index]); ax.axvline(0, color=TEXT, lw=1.2)
+ax.set_xlim(-2, 2.4); ax.set_ylim(-0.6, len(gb_diff) + 0.4); ax.grid(axis="y", visible=False); ax.tick_params(axis="y", length=0)
+ax.set_xlabel("GBST-BERT minus Transformer++, mean test accuracy (percentage points)")
+ax.set_title(f"Genomic Benchmarks: GBST-BERT has the higher mean on {gb_better} of {len(gb_diff)} tasks")
+save(fig, "gb_differences"); plt.show()
+
+display(Markdown(f"GBST-BERT has the higher mean than Transformer++ on **{gb_better} of 8** tasks (sign test p = "
+                 f"{sign_test(gb_better, 8):.2f}), with differences of at most {gb_diff.abs().drop('dummy_mouse_enhancers_ensembl').max():.1f} "
+                 f"points outside mouse enhancers. Mouse enhancers has only 1,210 sequences (97-sequence validation "
+                 f"split), and one bad repeat lowers GBST-BERT's mean there. This benchmark therefore does not "
+                 f"show a clear benefit from GBST."))
+""")
+
+# =============================================================================================
+md(r"""
+## 12. Summary
 """)
 code(r"""
 acc = test["acc_ACGT"]; loss = test["loss"]
@@ -797,12 +989,19 @@ single bases; the model is very sure inside tandem repeats ({correct[in_repeat].
 and much less elsewhere ({correct[~in_repeat].mean():.0%}).
 
 **Prediction tasks (Parts 8-9).** Over 18 tasks with 10 repeats each, GBST-BERT has the best mean
-of all seven models on **{int(wins['GBST-BERT'])} tasks** and beats the same model without GBST on
+of all seven models on **{int(wins['GBST-BERT'])} tasks** and beats Transformer++ on
 **{better_than_control} of 18**. It is strongest on splice sites and histone marks and weakest on
 enhancers.
 
-**Not yet shown:** which part of GBST causes the gain (the two models also differ in normalisation);
-the clean test is the same model with GBST replaced by a lookup table (`TOKENIZER=embedding`).
+**Enhancers (Part 10).** The two enhancer tasks are the only ones with a large drop from validation
+to test, and a plain 4-mer baseline shows the same drop, so this is a property of the dataset.
+
+**Second benchmark (Part 11).** On the 8 Genomic Benchmarks tasks GBST-BERT has the higher mean than
+Transformer++ on {gb_better} of 8, with small differences: no clear benefit here.
+
+**Not yet shown:** which part of GBST causes the gain, or that GBST causes it at all (the two models
+also differ in normalisation and in how their pretraining learning rate was chosen); the clean test
+is the same model with GBST replaced by a lookup table (`TOKENIZER=embedding`).
 
 All tables and figures of this notebook are in `notebooks/outputs/`.
 '''

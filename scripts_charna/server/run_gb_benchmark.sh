@@ -1,6 +1,6 @@
 #!/bin/bash
 # Genomic Benchmarks (8 tasks) for the two final pretrained models (step 10,000): GBST-BERT
-# (full_charna_mlm) and Transformer++ (full_llama_mlm). Protocol of Bio-xLSTM (App. C.3): PH, mean
+# (full_charna_mlm) and Transformer++ (full_llama_mlm). Protocol of Bio-xLSTM (App. C.5): PH, mean
 # pooling + linear head, full fine-tuning, 10 epochs, 5 seeds, best validation epoch tested, top-1
 # accuracy. The paper gives no per-task settings for this benchmark, so every task uses one setting
 # from its search grid (LR 1e-3, batch 128). One worker per GPU pulls jobs from a shared queue.

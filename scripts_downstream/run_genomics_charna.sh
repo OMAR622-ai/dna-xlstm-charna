@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Genomic Benchmarks (Gresova et al. 2023, 8 tasks) for the GBST + BERT model (MODEL=charna) and the
-# same-shape Transformer++-2M baseline (MODEL=llama). Protocol of Bio-xLSTM (App. C.3) / run_genomics.sh:
+# same-shape Transformer++-2M baseline (MODEL=llama). Protocol of Bio-xLSTM (App. C.5) / run_genomics.sh:
 #   post-hoc conjoining (PH): RC augmentation on the train split, forward/RC averaged at test time,
 #   mean pooling + linear head, full fine-tuning, 10 epochs, 5 train/val splits (seeds),
 #   best validation epoch tested, top-1 accuracy.

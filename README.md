@@ -207,7 +207,7 @@ Consequences of the older GPUs, kept for comparability:
   inert placeholders for the missing packages and then runs the unchanged `train.py`. Using a
   Mamba/Caduceus model would fail loudly; GBST + BERT and Transformer++ do not need them.
   DNA-xLSTM itself cannot be retrained here, so its numbers are taken from the paper.
-- Global batch of 1,024 sequences = 4 GPUs × 32 × 32 gradient-accumulation steps.
+- Global batch of 1,024 sequences = 4 GPUs × 32 × 8 gradient-accumulation steps.
   Lightning 1.8 counts `val_check_interval` in micro-batches, so the scripts scale it by the
   accumulation factor.
 
@@ -520,6 +520,11 @@ Loss in nats per masked nucleotide. Throughput on the shared 1080 Tis: ≈13.7 s
 (≈75k tokens/s) for both models; peak memory 3.4 GB (GBST + BERT) and 1.2 GB (Transformer++,
 which uses gradient checkpointing). Estimated full run: ≈40 h per model including validation.
 
+## Practical-work report and notebook
+
+- Report (NeurIPS 2026 style): [`docs/report_neurips/report.pdf`](docs/report_neurips/report.pdf), sources in the same folder; tables are generated from the notebook outputs by `make_tables.py`.
+- Executed notebook: [`notebooks/GBST_BERT_full_pipeline.ipynb`](notebooks/GBST_BERT_full_pipeline.ipynb) (12 parts, including the enhancer diagnosis and Genomic Benchmarks).
+
 ## Known issues
 
 - **hg38 data loading with several workers (repo bug, fixed in this branch on 5 Oct 2026).**
@@ -547,5 +552,5 @@ which uses gradient checkpointing). Estimated full run: ≈40 h per model includ
   the 20 GB home quota (queue stuck for 23 h); the last-epoch copy is now deleted and the tested
   checkpoint moved to the server's local disk (`/tmp/omohamed_nt_ckpts`), with backups on this
   computer and in the GitHub release.
-- The global batch is reached with gradient accumulation (4 GPUs × 32 × 32) instead of the
+- The global batch is reached with gradient accumulation (4 GPUs × 32 × 8) instead of the
   paper's larger per-step GPU batch; mathematically the same update, but slower.
