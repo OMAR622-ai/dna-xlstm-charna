@@ -312,7 +312,7 @@ strand flipping, downsampling).
 On the JKU server, everything is installed. Start with:
 
 ```bash
-ssh -p 5792 omohamed@student01.ai-lab.jku.at
+ssh -p <port> <user>@<server>
 source ~/envs/charna/bin/activate        # switch on the Python environment we installed
 cd ~/charna/dna-xlstm                    # the project folder
 ```
