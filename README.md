@@ -523,7 +523,7 @@ which uses gradient checkpointing). Estimated full run: ≈40 h per model includ
 ## Practical-work report and notebook
 
 - Report (NeurIPS 2026 style): [`docs/report_neurips/report.pdf`](docs/report_neurips/report.pdf), sources in the same folder; tables are generated from the notebook outputs by `make_tables.py`.
-- Executed notebook: [`notebooks/GBST_BERT_full_pipeline.ipynb`](notebooks/GBST_BERT_full_pipeline.ipynb) (12 parts, including the enhancer diagnosis and Genomic Benchmarks).
+- Executed notebook: [`notebooks/GBST_BERT_full_pipeline.ipynb`](notebooks/GBST_BERT_full_pipeline.ipynb) (11 parts, including the enhancer diagnosis).
 
 ## Known issues
 

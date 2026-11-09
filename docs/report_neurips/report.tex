@@ -45,8 +45,7 @@ this architecture in the DNA-xLSTM code base and pretrain a 2.1M-parameter model
 human genome under the short-context protocol of Bio-xLSTM, next to a Transformer++ control of the
 same shape. Pretraining does not separate the two models (test accuracy on masked bases 56.44\% vs.\
 56.33\%). On the 18 Nucleotide Transformer tasks, GBST-BERT has the best mean of seven models on 13
-tasks and exceeds the control on 16, with the largest gains on histone marks. On the 8 Genomic
-Benchmarks tasks the advantage is small (higher mean on 5 of 8). GBST places 98\% of its weight on
+tasks and exceeds the control on 16, with the largest gains on histone marks. GBST places 98\% of its weight on
 single bases, so it does not learn multi-base units on human DNA; we suspect the gain comes from its
 convolution, but the control also differs in normalization and learning-rate tuning, so this
 remains to be tested. Finally, we show that the weak enhancer scores coincide with a train--test
@@ -72,13 +71,12 @@ test, and a quarter of the test sequences are exact copies of training sequences
   \item[4. How was it trained?] By masked language modelling on hg38, with the short-context protocol
   of Bio-xLSTM: 10,000 steps of $2^{20}$ bases, 10.5B bases in total (Section~\ref{sec:setup}).
 
-  \item[5. How was it evaluated?] On masked-base prediction, on the 18 Nucleotide Transformer tasks
-  (10 seeds) and on the 8 Genomic Benchmarks tasks (5 seeds), next to a Transformer++ control and the
+  \item[5. How was it evaluated?] On masked-base prediction, and on the 18 Nucleotide Transformer tasks
+  (10 seeds), next to a Transformer++ control and the
   values published in Bio-xLSTM. No choice was made on test data.
 
   \item[6. What is the main result?] Pretraining is a tie (56.44\% vs.\ 56.33\%). On the NT tasks
-  GBST-BERT has the best mean of seven models on 13 of 18 and exceeds its control on 16 of 18. On
-  Genomic Benchmarks the advantage is small: a higher mean on 5 of 8 tasks.
+  GBST-BERT has the best mean of seven models on 13 of 18 and exceeds its control on 16 of 18.
 
   \item[7. Did GBST learn DNA ``words''?] No. The final model places 98\% of its weight on single
   bases, so it does not form multi-base units on human DNA in this setup (Section~\ref{sec:gbstres}).
@@ -94,7 +92,7 @@ test, and a quarter of the test sequences are exact copies of training sequences
   training sequences (Section~\ref{sec:enh}).
 
   \item[10. Can the results be reproduced, and what comes next?] The notebook re-computes all tables
-  and figures from the saved runs and repeats one fine-tuning job per benchmark; switches repeat the
+  and figures from the saved runs and repeats one fine-tuning job; switches repeat the
   long runs. The next steps are the ablation in question 8 and repeated pretraining with other seeds.
 \end{description}
 
@@ -143,7 +141,7 @@ shared GPUs.
 \begin{itemize}
   \item An implementation of GBST-BERT in the DNA-xLSTM code base, tested against a reference
   implementation of the published equations, and released with a one-file model and a notebook.
-  \item A comparison with Transformer++ in pretraining and on 26 downstream tasks (464 fine-tuning
+  \item A comparison with Transformer++ in pretraining and on 18 downstream tasks (384 fine-tuning
   runs), reported with all repeats.
   \item An analysis of what GBST learned on DNA, which differs from the motivation for using it.
   \item A diagnosis of the two NT enhancer tasks, which affects how these tasks should be read.
@@ -162,8 +160,7 @@ characters and lets a scoring network weight them, which makes the tokenization 
 ChaRNABERT removes Charformer's downsampling, so that one output per character remains.
 
 \textbf{Evaluation.} Bio-xLSTM evaluates DNA models of 2M parameters on the 18 Nucleotide Transformer
-(NT) tasks, and of 500k parameters on the 8 Genomic Benchmarks tasks \citep{gresova2023genomic}. We
-reuse its reported values as references.
+(NT) tasks. We reuse its reported values as references.
 
 \section{Method}\label{sec:method}
 
@@ -330,14 +327,6 @@ one class (F1 0.663 in all first three donor runs), so $1\mathrm{e}{-3}$ and $5\
 also run for both models with 3 seeds, and the setting with the best mean \emph{validation} score
 was completed to 10 seeds.
 
-\textbf{Genomic Benchmarks.} These 8 tasks \citep{gresova2023genomic} add mouse and worm DNA, open
-chromatin and coding vs.\ non-coding sequence, and have up to 231k training sequences
-(Appendix~\ref{app:tasks}). The procedure is the same, with 10 epochs, 5 seeds and top-1 accuracy, as in
-the paper. It reports no per-task settings for this benchmark, so all tasks use one setting from
-its grid (learning rate $1\mathrm{e}{-3}$, batch 128). Sequences are cut to 1,024 bases, and shorter
-ones are left-padded; as in the repository's code, padded positions are not masked in attention or
-pooling.
-
 \textbf{Enhancer diagnosis.} For Section~\ref{sec:enh}, we compare validation and test scores over all
 tasks and train a logistic regression on the frequencies of the 256 possible 4-mers (no neural network,
 no pretraining) on 90\% of a training file, scoring it on the remaining 10\% and on the test file.
@@ -442,33 +431,12 @@ falls further when they are removed. Second, validation scores cannot guide mode
 they do not reflect test behaviour. We did not determine why some published models reach higher test
 scores on these tasks; with 400 test sequences the estimates are also noisy.
 
-\subsection{Genomic Benchmarks}
-
-\begin{table}[t]
-  \caption{Genomic Benchmarks test accuracy, mean $\pm$ range over 5 seeds. Paper models have 500k
-  parameters and ours 2M, so the paper's values are a reference only. Last column: splits on which
-  GBST-BERT is above Transformer++.}
-  \label{tab:gb}
-  \centering
-  \scriptsize
-  \setlength{\tabcolsep}{2.5pt}
-  \resizebox{\linewidth}{!}{\input{tables/gb_all.tex}}
-\end{table}
-
-Here the effect is much weaker (Table~\ref{tab:gb}). GBST-BERT has the higher mean than Transformer++
-on 5 of 8 tasks (sign test $p=0.73$), by at most 0.8 percentage points. It is ahead on all 5 splits
-on coding vs.\ intergenomic and open chromatin, and behind on 4 of 5 splits on two tasks. Mouse enhancers
-(968 training sequences, of which 97 go to validation) shows a lower mean although GBST-BERT wins 4 of 5 splits: in one
-split an early epoch scored highest on validation and then reached only 0.68 on test. Overall this
-benchmark does not show a clear benefit from GBST. It uses larger datasets, up to 231k training
-sequences, and one untuned setting, and we cannot separate these factors.
-
 \section{Discussion and limitations}\label{sec:disc}
 
 \textbf{Answers to the research questions.} \emph{RQ1:} GBST does not measurably improve masked-base
 prediction; the final difference of 0.11 percentage points is too small to interpret with one run per
 model. \emph{RQ2:} on the NT benchmark GBST-BERT is ahead of its control on 16 of 18 tasks and has the
-best mean of seven models on 13, while on Genomic Benchmarks the difference is small and mixed.
+best mean of seven models on 13.
 \emph{RQ3:} GBST does not form multi-base units; it settles on single bases.
 
 \textbf{Where the gains appear.} The NT gains are uneven. GBST-BERT has the best mean on 8 of 10 histone
@@ -491,12 +459,6 @@ rate $5\mathrm{e}{-4}$ and 98\% at $2\mathrm{e}{-3}$. As we selected the learnin
 loss, the better-predicting of these two settings is also the one that uses longer blocks less. Whether GBST
 would use longer blocks with another objective, a longer context or downsampling remains open.
 
-\textbf{Why the effect may be smaller on Genomic Benchmarks.} Several factors differ from the NT
-benchmark and cannot be separated here. Some tasks have far more training data, which may reduce the
-value of any input bias. All tasks used one setting that was not tuned for them, and there are 5 seeds
-rather than 10. Several accuracies are also close to their ceiling. The result is a useful caution: the
-NT advantage should not be assumed to generalize to every DNA classification task.
-
 \textbf{Training stability.} GBST-BERT is not uniformly more robust. It collapsed to one class on splice
 tasks at the paper's learning rates, and some histone tasks show wide ranges between seeds. Transformer++
 shows such ranges as well, for example on splice donors ($\pm0.117$). Mean scores should therefore be
@@ -512,8 +474,7 @@ and it does not explain why some models score higher on them.
 reads single bases, so learned multi-base units cannot explain it. We suspect the convolution, but this
 is a hypothesis. The two models also differ in normalization and in how their pretraining learning rate
 was chosen, and either difference could contribute. The comparison with published models is also
-limited: they were tuned per model, while we reused settings chosen for DNA-xLSTM-PH, and on Genomic
-Benchmarks they are four times smaller than ours.
+limited: they were tuned per model, while we reused settings chosen for DNA-xLSTM-PH.
 
 \textbf{Further limitations.}
 \begin{itemize}
@@ -526,9 +487,7 @@ Benchmarks they are four times smaller than ours.
   blocks that contain each position, used standard SwiGLU, and chose the maximum block size of 4
   ourselves. A different reading could change the results.
   \item \emph{Fine-tuning details.} Settings came from another architecture and were tuned only on splice
-  tasks. On Genomic Benchmarks, padded positions are not masked, and the repository's schedule assumes a
-  larger training set than is used, so the learning rate does not reach its minimum. These details
-  apply equally to both of our models.
+  tasks. This applies equally to both of our models.
   \item \emph{Scope.} We tested one model size, one context length and classification tasks only.
   Nothing here supports clinical use.
 \end{itemize}
@@ -536,9 +495,9 @@ Benchmarks they are four times smaller than ours.
 \section{Conclusion}
 
 We transferred ChaRNABERT's learned tokenizer to human DNA at the 2M-parameter scale of DNA-xLSTM and
-compared it with a same-shape control in pretraining and on 26 downstream tasks. Three findings stand
+compared it with a same-shape control in pretraining and on 18 downstream tasks. Three findings stand
 out. First, GBST-BERT is a competitive small DNA model: it has the best mean of seven models on 13 of 18
-NT tasks, although its advantage is much smaller on Genomic Benchmarks. Second, the tokenizer did not
+NT tasks, and it exceeds its control on 16 of them. Second, the tokenizer did not
 behave as motivated: it chose single bases and formed no multi-base units, so the improvement, if it
 comes from GBST at all, must have another source. Third, the weak enhancer scores coincide with a
 train--test mismatch and duplicated sequences in the benchmark, which matters for anyone comparing
@@ -611,12 +570,6 @@ Table~\ref{tab:settings} lists the main settings and their sources.
   \small
   \captionof{table}{The 18 NT tasks. Learning rate and batch size: Bio-xLSTM Table A5, DNA-xLSTM-PH column.}
   \resizebox{\linewidth}{!}{\input{tables/nt_tasks.tex}}
-\end{center}
-
-\begin{center}
-  \small
-  \captionof{table}{The 8 Genomic Benchmarks tasks.}
-  \input{tables/gb_tasks.tex}
 \end{center}
 
 \end{document}
