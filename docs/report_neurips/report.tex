@@ -39,18 +39,25 @@
 \maketitle
 
 \begin{abstract}
-DNA language models usually fix their tokenization in advance. ChaRNABERT showed for RNA that a
-learned tokenizer, Gradient-Based Subword Tokenization (GBST), can replace this choice. We implement
-this architecture in the DNA-xLSTM code base and pretrain a 2.1M-parameter model, GBST-BERT, on the
-human genome under the short-context protocol of Bio-xLSTM, next to a Transformer++ control of the
-same shape. Pretraining does not separate the two models (test accuracy on masked bases 56.44\% vs.\
-56.33\%). On the 18 Nucleotide Transformer tasks, GBST-BERT has the best mean of seven models on 13
-tasks and exceeds the control on 16, with the largest gains on histone marks. GBST places 98\% of its weight on
-single bases, so it does not learn multi-base units on human DNA; we suspect the gain comes from its
-convolution, but the control also differs in normalization and learning-rate tuning, so this
-remains to be tested. Finally, we show that the weak enhancer scores coincide with a train--test
+DNA language models must decide how to cut a sequence into units before they can learn from it, and
+most fix this choice in advance: one token per base, or k-mers of a set length. ChaRNABERT showed
+for RNA that a learned tokenizer, Gradient-Based Subword Tokenization (GBST), can replace this choice:
+at every position it builds candidate blocks of several lengths and learns how much weight each one
+receives. We ask whether this idea transfers to DNA at the small scale of DNA-xLSTM. We implement
+the architecture in the DNA-xLSTM code base and pretrain a 2.1M-parameter model, GBST-BERT, by
+masked language modelling on the human genome (hg38) under the short-context protocol of Bio-xLSTM
+(10,000 steps, 10.5B bases), next to a Transformer++ control of the same shape. We then fine-tune
+both models on the 18 Nucleotide Transformer tasks with 10 seeds each and compare them with the
+values published for Bio-xLSTM's models. Pretraining does not separate the two models (test
+accuracy on masked bases 56.44\% vs.\ 56.33\%). Downstream, GBST-BERT has the best mean of seven
+models on 13 tasks and exceeds the control on 16 of 18, with the largest gains on histone marks and
+splice sites; it is weakest on enhancers. GBST places 98\% of its weight on single bases, so it
+does not learn multi-base units on human DNA. We suspect the gain comes from its convolution, but
+the control also differs in normalization and learning-rate tuning, so this remains to be tested
+with an ablation. Finally, we show that the weak enhancer scores coincide with a train--test
 mismatch in the benchmark itself: a plain 4-mer classifier shows the same drop from validation to
-test, and a quarter of the test sequences are exact copies of training sequences.
+test, and a quarter of the test sequences are exact copies of training sequences. Code, trained
+models and an executed notebook that reproduces every table are public.
 \end{abstract}
 
 \section*{Ten questions and answers}
@@ -100,8 +107,13 @@ test, and a quarter of the test sequences are exact copies of training sequences
 
 Genomes are long texts over a four-letter alphabet, and language models trained on them have become
 a general tool for predicting regulatory and functional properties of DNA
-\citep{dallatorre2023nt,nguyen2023hyenadna,schiff2024caduceus}. Before such a model can learn
-anything, it must decide how to cut its input into units, and for DNA this choice is not obvious.
+\citep{dallatorre2023nt,nguyen2023hyenadna,schiff2024caduceus}. Such models are first
+pretrained on unlabelled genomes, usually by hiding some bases and asking the model to recover them,
+and then fine-tuned on small labelled datasets, for example to recognise promoters, enhancers,
+splice sites or regions carrying a given histone modification. This two-step approach is attractive
+for biology because labelled data are scarce and expensive, while genome sequence is abundant.
+Before such a model can learn anything, however, it must decide how to cut its input into units,
+and for DNA this choice is not obvious.
 Natural language offers words as a starting point; DNA has no spaces, and its functional units have
 very different lengths and meanings. A methylation site involves two bases, a codon three, and a
 transcription-factor binding site typically six to ten; splice sites depend on short dinucleotides
@@ -129,6 +141,22 @@ procedure, and scores of several architectures. This gives a fixed reference. A 
 where a good inductive bias should matter most, and where repeated fine-tuning remains affordable on
 shared GPUs.
 
+\textbf{Why a controlled comparison is needed.} Published DNA models differ in many ways at once:
+size, architecture, training data, number of training steps and fine-tuning budget. When one of them
+scores higher, it is rarely clear which difference is responsible. To isolate the input module we
+keep everything else as fixed as possible: GBST-BERT and Transformer++ have the same encoder width
+and depth, nearly the same number of parameters (2.11M vs.\ 2.04M), the same pretraining data and
+budget, and the same fine-tuning protocol. Comparing with Bio-xLSTM's published values then places
+both models among other architectures of the same size, trained under the same protocol.
+
+\textbf{What this report does.} We implement GBST-BERT inside the DNA-xLSTM code base, so that it
+uses the same data pipeline, training loop and evaluation scripts as the published models, and test
+it against a separate implementation of ChaRNABERT's equations. We pretrain both models on hg38 and
+fine-tune them on 18 tasks with 10 seeds each, giving 384 fine-tuning runs. We then look inside the
+model to see which block sizes GBST uses, and we examine the weakest result, the enhancer tasks, with
+a simple baseline that needs no neural network. All runs, code and trained models are public, and a
+notebook re-computes every table and figure from the saved runs.
+
 \textbf{Research questions.} We keep ChaRNABERT's architecture and change the data, and we ask:
 \begin{enumerate}
   \item[\textbf{RQ1.}] Does GBST improve masked-base prediction on the human genome?
@@ -146,6 +174,15 @@ shared GPUs.
   \item An analysis of what GBST learned on DNA, which differs from the motivation for using it.
   \item A diagnosis of the two NT enhancer tasks, which affects how these tasks should be read.
 \end{itemize}
+
+\textbf{Summary of findings.} The answer to RQ1 is no: after 10.5B bases both models predict masked
+bases equally well (56.44\% vs.\ 56.33\%). The answer to RQ2 is a qualified yes: GBST-BERT has the
+best mean of seven models on 13 of 18 tasks and exceeds the control on 16 (sign test $p=0.0013$),
+with gains of up to $+0.190$ MCC on histone marks, but it is clearly behind the best published model
+on enhancers (MCC 0.336 vs.\ 0.546). The answer to RQ3 is unexpected: GBST puts 98\% of its weight
+on single bases, so the tokenizer does not do what motivated it. Because the control is not an exact
+copy of GBST-BERT without GBST, these results show that GBST-BERT is a strong small DNA model, but
+not yet that the tokenizer causes its advantage.
 
 Section~\ref{sec:background} gives background, Section~\ref{sec:method} the method,
 Section~\ref{sec:setup} the data and protocols, Section~\ref{sec:results} the results, and
@@ -542,6 +579,7 @@ to \texttt{True} repeats those long runs with the same scripts.
 \bibliographystyle{plainnat}
 \bibliography{refs}
 
+\clearpage
 \appendix
 
 \section{Settings}\label{app:hparams}
